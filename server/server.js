@@ -5,15 +5,23 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
+// 1. MUST BE FIRST: CORS configuration
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+  credentials: true
 }));
+
+// 2. Body Parser
 app.use(express.json());
 
-// Routes
+// 3. Health Check Route (to verify if server is up)
+app.get('/', (req, res) => {
+  res.json({ status: 'Online', database: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected' });
+});
+
+// 4. Auth Routes
 app.use('/api/auth', require('./routes/auth'));
 
 // Connect to MongoDB
