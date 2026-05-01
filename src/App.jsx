@@ -211,6 +211,22 @@ function App() {
     }));
   };
 
+  function handleClassChange(newClass) {
+    setSelectedClass(newClass);
+    const newTasks = generateOrderedTasks(newClass, selectedBoard);
+    setTasks(newTasks);
+    setSubjects(getInitialSubjects(newClass));
+    setUserStats(prev => ({ ...prev, lessonsCompleted: 0 }));
+  }
+
+  function handleBoardChange(newBoard) {
+    setSelectedBoard(newBoard);
+    const newTasks = generateOrderedTasks(selectedClass, newBoard);
+    setTasks(newTasks);
+    setSubjects(getInitialSubjects(selectedClass));
+    setUserStats(prev => ({ ...prev, lessonsCompleted: 0 }));
+  }
+
   const dailyMissions = tasks.filter(t => !t.completed).slice(0, 4);
   const isFullscreen = location.pathname.startsWith('/lesson') || location.pathname === '/speaking';
 
@@ -227,7 +243,7 @@ function App() {
               <Hero />
               <Features />
               <Subjects subjects={subjects} />
-              <StudyTools userClass={selectedClass} onSpeakingClick={() => navigate('/speaking')} />
+              <StudyTools userClass={selectedClass} />
               <Dashboard 
                 stats={userStats} 
                 tasks={tasks} 
@@ -278,20 +294,6 @@ function App() {
       {!isFullscreen && <AITutor userClass={selectedClass} />}
     </div>
   );
-
-  function handleClassChange(newClass) {
-    setSelectedClass(newClass);
-    setTasks(generateOrderedTasks(newClass, selectedBoard));
-    setSubjects(getInitialSubjects(newClass));
-    setUserStats(prev => ({ ...prev, lessonsCompleted: 0 }));
-  }
-
-  function handleBoardChange(newBoard) {
-    setSelectedBoard(newBoard);
-    setTasks(generateOrderedTasks(selectedClass, newBoard));
-    setSubjects(getInitialSubjects(selectedClass));
-    setUserStats(prev => ({ ...prev, lessonsCompleted: 0 }));
-  }
 }
 
 export default App;

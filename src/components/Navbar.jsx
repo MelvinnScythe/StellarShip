@@ -1,3 +1,6 @@
+import React, { useState } from 'react';
+import { Rocket, LogOut, User, Menu, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 const Navbar = ({ user, onLogout }) => {
