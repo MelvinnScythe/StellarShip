@@ -17,6 +17,22 @@ const UserSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  xpEarned: {
+    type: Number,
+    default: 0
+  },
+  level: {
+    type: Number,
+    default: 1
+  },
+  selectedClass: {
+    type: Number,
+    default: 1
+  },
+  streak: {
+    type: Number,
+    default: 0
   }
 });
 

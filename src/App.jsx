@@ -8,6 +8,8 @@ import BackgroundStars from './components/BackgroundStars';
 import LessonPage from './components/LessonPage';
 import Auth from './components/Auth';
 import { getLessonContent } from './curriculumData';
+import AITutor from './components/AITutor';
+import StudyTools from './components/StudyTools';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -19,29 +21,57 @@ function App() {
       return null;
     }
   });
+  const [selectedClass, setSelectedClass] = useState(currentUser?.selectedClass || 1);
   const [selectedBoard, setSelectedBoard] = useState("CBSE");
-  const [selectedClass, setSelectedClass] = useState(1);
   const [activeLesson, setActiveLesson] = useState(null);
 
-  const handleLogin = (user) => {
+  const handleLogin = (user, token) => {
     setCurrentUser(user);
+    if (user.selectedClass) setSelectedClass(user.selectedClass);
+    if (user.xpEarned !== undefined) {
+      setUserStats(prev => ({ ...prev, xpEarned: user.xpEarned, level: user.level || 1, streak: user.streak || 0 }));
+    }
     localStorage.setItem('antigravity_current_user', JSON.stringify(user));
+    if (token) localStorage.setItem('antigravity_token', token);
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('antigravity_current_user');
+    localStorage.removeItem('antigravity_token');
   };
 
   // Global User State
   const [userStats, setUserStats] = useState({
     studyTime: 0,
     lessonsCompleted: 0,
-    xpEarned: 0,
+    xpEarned: currentUser?.xpEarned || 0,
     nextGoal: "3 days until Math Exam",
-    streak: 0,
-    level: 1
+    streak: currentUser?.streak || 0,
+    level: currentUser?.level || 1
   });
+
+  // Sync Progress to Backend
+  useEffect(() => {
+    if (currentUser) {
+      const token = localStorage.getItem('antigravity_token');
+      if (token) {
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/progress`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            xpEarned: userStats.xpEarned,
+            level: userStats.level,
+            selectedClass: selectedClass,
+            streak: userStats.streak
+          })
+        }).catch(e => console.error('Failed to sync progress:', e));
+      }
+    }
+  }, [userStats.xpEarned, userStats.level, selectedClass, userStats.streak, currentUser]);
 
   const getInitialSubjects = (classNum) => {
     const allSubjects = [
@@ -402,6 +432,7 @@ function App() {
         <Hero />
         <Features />
         <Subjects subjects={subjects} />
+        <StudyTools userClass={selectedClass} />
         <Dashboard 
           stats={userStats} 
           tasks={tasks} 
@@ -443,6 +474,7 @@ function App() {
       }}>
         <p>© 2026 StellarStudy. Launching your potential into the cosmos.</p>
       </footer>
+      <AITutor userClass={selectedClass} />
     </div>
   );
 }

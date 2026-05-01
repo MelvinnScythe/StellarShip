@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, BookOpen, Star, Calendar, CheckCircle2, Circle, Flame, Trophy } from 'lucide-react';
+import { Clock, BookOpen, Star, Calendar, CheckCircle2, Circle, Flame, Trophy, Crown } from 'lucide-react';
 
 const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, selectedBoard, onBoardChange, onStartLesson, dailyMissions }) => {
   const statCards = [
@@ -9,6 +9,41 @@ const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, s
     { label: "XP Earned", value: stats.xpEarned.toLocaleString(), sub: "This month", icon: <Star size={18} /> },
     { label: "Next Goal", value: stats.nextGoal.split(' ')[0] + ' ' + stats.nextGoal.split(' ')[1], sub: stats.nextGoal.split(' ').slice(2).join(' '), icon: <Calendar size={18} /> }
   ];
+
+  const [leaderboard, setLeaderboard] = React.useState([]);
+
+  React.useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/leaderboard`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const currentUser = JSON.parse(localStorage.getItem('antigravity_current_user'));
+          const formatted = data.map((u, i) => ({
+            rank: i + 1,
+            name: u.name,
+            level: u.level || 1,
+            xp: u.xpEarned || 0,
+            avatar: ['👨‍🚀', '👩‍🚀', '👽', '🤖', '👾'][i % 5],
+            isCurrentUser: currentUser && u.name === currentUser.name
+          }));
+          
+          if (currentUser && !formatted.some(u => u.isCurrentUser)) {
+             formatted.push({
+               rank: formatted.length + 1,
+               name: "You",
+               level: stats.level,
+               xp: stats.xpEarned,
+               avatar: "👽",
+               isCurrentUser: true
+             });
+          }
+          
+          formatted.sort((a,b) => b.xp - a.xp).forEach((u,i) => u.rank = i+1);
+          setLeaderboard(formatted.slice(0, 10));
+        }
+      })
+      .catch(e => console.error("Leaderboard fetch error", e));
+  }, [stats.xpEarned]);
 
   return (
     <section id="progress" style={{ padding: '8rem 2rem' }}>
@@ -129,6 +164,33 @@ const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, s
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{s.sub}</div>
               </motion.div>
             ))}
+          </div>
+
+          {/* Leaderboard */}
+          <div style={{ marginBottom: '4rem' }}>
+            <h4 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Crown size={20} color="var(--accent-red)" />
+              Global Leaderboard
+            </h4>
+            <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px solid var(--glass-border)', overflow: 'hidden' }}>
+              {leaderboard.map((user) => (
+                <div key={user.name} style={{ 
+                  display: 'flex', alignItems: 'center', padding: '1rem 1.5rem', 
+                  borderBottom: user.rank !== 5 ? '1px solid var(--glass-border)' : 'none',
+                  background: user.isCurrentUser ? 'rgba(99, 102, 241, 0.1)' : 'transparent'
+                }}>
+                  <div style={{ width: '40px', fontWeight: 'bold', color: user.rank <= 3 ? 'var(--accent-red)' : 'var(--text-secondary)' }}>
+                    #{user.rank}
+                  </div>
+                  <div style={{ fontSize: '1.5rem', marginRight: '1rem' }}>{user.avatar}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '600', color: user.isCurrentUser ? '#8b5cf6' : 'white' }}>{user.name}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Level {user.level}</div>
+                  </div>
+                  <div style={{ fontWeight: '700', color: 'white' }}>{user.xp.toLocaleString()} XP</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Daily Missions */}

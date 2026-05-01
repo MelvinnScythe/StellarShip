@@ -23,6 +23,7 @@ app.get('/', (req, res) => {
 
 // 4. Auth Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)

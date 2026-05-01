@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, ArrowRight, Shield, ArrowLeft } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Auth = ({ onLogin }) => {
   const [view, setView] = useState('login'); // 'login', 'signup', 'forgot'
@@ -11,6 +12,25 @@ const Auth = ({ onLogin }) => {
   const [message, setMessage] = useState('');
 
   const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/auth';
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const res = await fetch(`${API_URL}/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: credentialResponse.credential })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onLogin(data.user, data.token);
+      } else {
+        setError(data.msg || 'Google login failed');
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Cannot connect to server.");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,7 +46,7 @@ const Auth = ({ onLogin }) => {
         });
         const data = await res.json();
         if (res.ok) {
-          onLogin(data.user);
+          onLogin(data.user, data.token);
         } else {
           setError(data.msg || 'Login failed');
         }
@@ -38,7 +58,7 @@ const Auth = ({ onLogin }) => {
         });
         const data = await res.json();
         if (res.ok) {
-          onLogin(data.user);
+          onLogin(data.user, data.token);
         } else {
           setError(data.msg || 'Signup failed');
         }
@@ -158,6 +178,22 @@ const Auth = ({ onLogin }) => {
             {view === 'login' ? 'Sign In' : view === 'signup' ? 'Create Account' : view === 'forgot' ? 'Find Account' : 'Reset Password'} <ArrowRight size={18} />
           </motion.button>
         </form>
+
+        {(view === 'login' || view === 'signup') && (
+          <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '1rem' }}>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+              <span style={{ color: '#a1a1aa', fontSize: '0.85rem' }}>OR</span>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+            </div>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Login Failed')}
+              theme="filled_black"
+              shape="pill"
+            />
+          </div>
+        )}
 
         <div style={{ marginTop: '2rem', textAlign: 'center' }}>
           <p style={{ color: '#a1a1aa', fontSize: '0.9rem' }}>
