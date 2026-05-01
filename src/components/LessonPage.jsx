@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle, AlertCircle, BookOpen } from 'lucide-react';
 import { getLessonContent } from '../curriculumData';
 
+import TTSButton from './TTSButton';
+
 const LessonPage = ({ lesson, onBack, onComplete }) => {
   const { content, quiz, topics } = useMemo(() => getLessonContent(lesson.title, lesson.subject, lesson.lessonNum), [lesson.title, lesson.subject, lesson.lessonNum]);
   
@@ -82,14 +84,18 @@ const LessonPage = ({ lesson, onBack, onComplete }) => {
           }}>
             {lesson.subject} Learning Module
           </div>
-          <h1 style={{ 
-            fontSize: '3rem', 
-            fontWeight: '700', 
-            lineHeight: '1.2',
-            marginBottom: '1rem'
-          }}>
-            {lesson.title}
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
+            <h1 style={{ 
+              fontSize: '3rem', 
+              fontWeight: '700', 
+              lineHeight: '1.2',
+              marginBottom: '1rem',
+              flex: 1
+            }}>
+              {lesson.title}
+            </h1>
+            <TTSButton text={lesson.title} language={lesson.subject} size={24} />
+          </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>
             Master this topic to earn {lesson.xp} XP and progress in your journey.
           </p>
@@ -108,9 +114,12 @@ const LessonPage = ({ lesson, onBack, onComplete }) => {
             borderRadius: '24px',
             padding: '2.5rem'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              < BookOpen size={24} color="var(--accent-red)" />
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '600' }}>Curriculum Material</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                < BookOpen size={24} color="var(--accent-red)" />
+                <h2 style={{ fontSize: '1.5rem', fontWeight: '600' }}>Curriculum Material</h2>
+              </div>
+              <TTSButton text={content} language={lesson.subject} />
             </div>
             
             {topics && topics.length > 0 && (
@@ -154,9 +163,12 @@ const LessonPage = ({ lesson, onBack, onComplete }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {quiz.map((q, idx) => (
                 <div key={idx}>
-                  <p style={{ fontWeight: '600', fontSize: '1.1rem', marginBottom: '1rem' }}>
-                    {idx + 1}. {q.question}
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem' }}>
+                    <p style={{ fontWeight: '600', fontSize: '1.1rem', flex: 1 }}>
+                      {idx + 1}. {q.question}
+                    </p>
+                    <TTSButton text={q.question} language={lesson.subject} />
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {q.options.map((option, optIdx) => (
                       <label key={optIdx} style={{

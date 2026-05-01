@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import TTSButton from './TTSButton';
 
 // Initialize the Gemini API
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
@@ -166,28 +167,35 @@ IMPORTANT FORMATTING RULES:
                       <Bot size={14} color="#8b5cf6" />
                     </div>
                   )}
-                  <div style={{
-                    padding: '0.75rem 1rem',
-                    borderRadius: '16px',
-                    background: msg.role === 'user' ? 'linear-gradient(135deg, #ff3344, #ff8899)' : 'rgba(255, 255, 255, 0.05)',
-                    color: 'white',
-                    border: msg.role === 'user' ? 'none' : '1px solid var(--glass-border)',
-                    borderBottomRightRadius: msg.role === 'user' ? '4px' : '16px',
-                    borderBottomLeftRadius: msg.role === 'model' ? '4px' : '16px',
-                    fontSize: '0.9rem',
-                    lineHeight: '1.6',
-                    overflowX: 'auto',
-                    maxWidth: '100%'
-                  }} className="ai-markdown">
-                    {msg.role === 'user' ? (
-                      <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
-                    ) : (
-                      <ReactMarkdown
-                        remarkPlugins={[remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
-                      >
-                        {msg.text}
-                      </ReactMarkdown>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                    <div style={{
+                      padding: '0.75rem 1rem',
+                      borderRadius: '16px',
+                      background: msg.role === 'user' ? 'linear-gradient(135deg, #ff3344, #ff8899)' : 'rgba(255, 255, 255, 0.05)',
+                      color: 'white',
+                      border: msg.role === 'user' ? 'none' : '1px solid var(--glass-border)',
+                      borderBottomRightRadius: msg.role === 'user' ? '4px' : '16px',
+                      borderBottomLeftRadius: msg.role === 'model' ? '4px' : '16px',
+                      fontSize: '0.9rem',
+                      lineHeight: '1.6',
+                      overflowX: 'auto',
+                      maxWidth: '100%'
+                    }} className="ai-markdown">
+                      {msg.role === 'user' ? (
+                        <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                      ) : (
+                        <ReactMarkdown
+                          remarkPlugins={[remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
+                        >
+                          {msg.text}
+                        </ReactMarkdown>
+                      )}
+                    </div>
+                    {msg.role === 'model' && (
+                      <div style={{ marginLeft: '4px' }}>
+                        <TTSButton text={msg.text} size={14} />
+                      </div>
                     )}
                   </div>
                 </div>
