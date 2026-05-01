@@ -2518,7 +2518,7 @@ This is my hand. This is my nose. These are my eyes. These are my legs.</p>
   };
 
   if (specificData[cleanTitle]) {
-    const data = specificData[cleanTitle];
+  let data = specificData[cleanTitle] || specificData[title];
     // If we have detailed lessons and the requested lesson number is valid
     if (data.lessons && data.lessons[lessonNum - 1]) {
       const lesson = data.lessons[lessonNum - 1];
@@ -2655,7 +2655,7 @@ Reproduction is a biological process by which an organism reproduces an offsprin
     }
   }
 
-  const data = specificData[title] || specificData[cleanTitle];
+  data = specificData[title] || specificData[cleanTitle];
   
   if (data && data.lessons && data.lessons[lessonNum - 1]) {
     const lesson = data.lessons[lessonNum - 1];
@@ -2781,7 +2781,7 @@ Reproduction is a biological process by which an organism reproduces an offsprin
   }
 
   // Check if we have specific data
-  const data = specificData[cleanTitle];
+  data = specificData[cleanTitle];
   
   if (data) {
     // Ensure exactly 5 questions if possible
