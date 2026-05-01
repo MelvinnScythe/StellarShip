@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, BookOpen, Star, Calendar, CheckCircle2, Circle, Flame, Trophy, Crown } from 'lucide-react';
 
@@ -10,9 +10,9 @@ const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, s
     { label: "Next Goal", value: stats.nextGoal.split(' ')[0] + ' ' + stats.nextGoal.split(' ')[1], sub: stats.nextGoal.split(' ').slice(2).join(' '), icon: <Calendar size={18} /> }
   ];
 
-  const [leaderboard, setLeaderboard] = React.useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/leaderboard`)
       .then(res => res.json())
       .then(data => {
