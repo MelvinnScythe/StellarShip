@@ -2780,13 +2780,56 @@ Reproduction is a biological process by which an organism reproduces an offsprin
     }
   }
 
-  // Generic fallback for any other lessons
+  // Check if we have specific data
+  const data = specificData[cleanTitle];
+  
+  if (data) {
+    // Ensure exactly 5 questions if possible
+    if (data.quiz) {
+      if (data.quiz.length > 5) {
+        data.quiz = data.quiz.slice(0, 5);
+      } else if (data.quiz.length < 5) {
+        const extraQuestions = [
+          { "question": `What is the most interesting part of ${cleanTitle}?`, "options": ["The beginning", "The middle", "The end", "The whole thing"], "answer": "The whole thing" },
+          { "question": `Which tool helps us learn ${cleanTitle} better?`, "options": ["Focus", "Interest", "Food", "Sleep"], "answer": "Focus" },
+          { "question": `How do you feel about ${cleanTitle} after this?`, "options": ["Confused", "Confident", "Bored", "Tired"], "answer": "Confident" },
+          { "question": `Who can help you if you have questions about ${cleanTitle}?`, "options": ["A teacher", "A cat", "A pillow", "The floor"], "answer": "A teacher" },
+          { "question": `Is ${cleanTitle} a fun topic?`, "options": ["Yes!", "No", "Maybe", "I don't know"], "answer": "Yes!" }
+        ];
+        while (data.quiz.length < 5) {
+          data.quiz.push(extraQuestions[data.quiz.length % extraQuestions.length]);
+        }
+      }
+    }
+    return data;
+  }
+
+  // Fallback for missing content (ensures every lesson in Class 1-12 works)
+  const defaultQuiz = [
+    { "question": `What is the main idea of ${cleanTitle}?`, "options": ["Important detail", "Random fact", "Simple idea", "Advanced logic"], "answer": "Simple idea" },
+    { "question": `Which subject does ${cleanTitle} belong to?`, "options": ["Math", "Science", "History", subject], "answer": subject },
+    { "question": `Why is ${cleanTitle} important to learn?`, "options": ["To pass exams", "To build knowledge", "To play games", "To sleep better"], "answer": "To build knowledge" },
+    { "question": `Is ${cleanTitle} part of the Class ${lessonNum} syllabus?`, "options": ["Yes", "No", "Maybe", "Not sure"], "answer": "Yes" },
+    { "question": `What should we do after studying ${cleanTitle}?`, "options": ["Forget it", "Practice and review", "Watch TV", "Jump around"], "answer": "Practice and review" }
+  ];
+
   return {
-    content: `<h3><strong>Lesson ${lessonNum}</strong></h3>
-              <p>Welcome to this learning module on ${title}. In this lesson ${lessonNum}, we will explore the fundamental principles of ${subject}.</p>`,
-    quiz: [
-      { question: `Which subject are you currently studying?`, options: ["Mathematics", "Physics", "Chemistry", subject], answer: subject }
-    ],
-    topics: ["Introduction", "Core Concepts", "Summary"]
+    content: `<h3><strong>Deep Dive into ${cleanTitle}</strong></h3>\
+<p>Welcome to your lesson on <strong>${cleanTitle}</strong>! This topic is a core part of the Class ${lessonNum} curriculum. In this lesson, we explore the fundamental principles of ${subject} as they relate to ${cleanTitle}. By understanding these concepts, you will build a strong foundation for future learning.</p>\
+<h4><strong>Key Learning Objectives:</strong></h4>\
+<ul>\
+<li>Identify the main characteristics of ${cleanTitle}.</li>\
+<li>Explain how ${cleanTitle} works in daily life.</li>\
+<li>Practice applying your knowledge through interactive exercises.</li>\
+</ul>\
+<p>Stay focused and curious as you move through the material. Learning is an adventure that starts with a single step!</p>`,
+    quiz: defaultQuiz,
+    lessons: [
+      { title: `Introduction to ${cleanTitle}`, explanation: `In this section, we define what ${cleanTitle} is and why it matters in ${subject}.`, words: [cleanTitle, subject, "Foundation"], activities: `Think of one example of ${cleanTitle} you have seen today.` },
+      { title: `Core Principles`, explanation: `We look at the basic rules and ideas that make ${cleanTitle} special.`, words: ["Principles", "Logic", "Structure"], activities: `Write down two things you've learned about ${cleanTitle} so far.` },
+      { title: `Real-World Examples`, explanation: `Where do we see ${cleanTitle} outside of the classroom?`, words: ["Application", "Reality", "Context"], activities: `Ask a family member if they know anything about ${cleanTitle}.` },
+      { title: `Practice Session`, explanation: `Time to test your knowledge!`, words: ["Practice", "Skill", "Accuracy"], activities: `Try to explain ${cleanTitle} to a friend.` },
+      { title: `Summary & Review`, explanation: `We wrap up everything we've learned today.`, words: ["Summary", "Review", "Memory"], activities: `Close your eyes and remember the 3 most important parts.` }
+    ]
   };
 };
