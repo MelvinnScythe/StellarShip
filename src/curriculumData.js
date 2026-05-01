@@ -1,4 +1,5 @@
 export const getLessonContent = (title, subject, lessonNum = 1) => {
+  let data;
   // Clean title for matching (remove prefixes and subtopic suffixes)
   let cleanTitle = title.split(" - ").pop();
   if (cleanTitle.includes(": ")) {
@@ -2518,7 +2519,7 @@ This is my hand. This is my nose. These are my eyes. These are my legs.</p>
   };
 
   if (specificData[cleanTitle]) {
-  let data = specificData[cleanTitle] || specificData[title];
+    data = specificData[cleanTitle] || specificData[title];
     // If we have detailed lessons and the requested lesson number is valid
     if (data.lessons && data.lessons[lessonNum - 1]) {
       const lesson = data.lessons[lessonNum - 1];
