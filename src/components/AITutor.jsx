@@ -97,16 +97,16 @@ IMPORTANT FORMATTING RULES:
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             style={{
               position: 'fixed',
-              bottom: '2rem',
-              right: '2rem',
-              width: isExpanded ? '800px' : '350px',
-              height: isExpanded ? '600px' : '500px',
-              maxWidth: '90vw',
-              maxHeight: '90vh',
-              background: 'var(--glass-bg)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: '24px',
+              bottom: window.innerWidth < 768 ? '0' : '2rem',
+              right: window.innerWidth < 768 ? '0' : '2rem',
+              width: window.innerWidth < 768 ? '100%' : (isExpanded ? '800px' : '350px'),
+              height: window.innerWidth < 768 ? '100%' : (isExpanded ? '600px' : '500px'),
+              maxWidth: '100vw',
+              maxHeight: '100vh',
+              background: 'rgba(5, 5, 8, 0.95)',
+              backdropFilter: 'blur(30px)',
+              border: window.innerWidth < 768 ? 'none' : '1px solid var(--glass-border)',
+              borderRadius: window.innerWidth < 768 ? '0' : '24px',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
               display: 'flex',
               flexDirection: 'column',
@@ -133,9 +133,11 @@ IMPORTANT FORMATTING RULES:
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => setIsExpanded(!isExpanded)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                  {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-                </button>
+                {window.innerWidth > 768 && (
+                  <button onClick={() => setIsExpanded(!isExpanded)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                    {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                  </button>
+                )}
                 <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                   <X size={20} />
                 </button>

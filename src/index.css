@@ -73,3 +73,48 @@ a {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* --- Responsive Layout Utilities --- */
+
+/* For Tablets and smaller */
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 1.5rem;
+  }
+}
+
+/* For Mobile Phones */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px; /* Scaled down base font */
+  }
+
+  .container {
+    padding: 0 1rem;
+  }
+
+  section {
+    padding: 4rem 1rem !important; /* Reduce padding on mobile */
+  }
+
+  h1 { font-size: 2.5rem !important; }
+  h2 { font-size: 2rem !important; }
+  h3 { font-size: 1.5rem !important; }
+
+  /* Stack flex items on mobile */
+  .flex-stack {
+    flex-direction: column !important;
+  }
+  
+  /* Hide desktop-only elements */
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* Custom Scrollbar for Mobile (Thinner) */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+}

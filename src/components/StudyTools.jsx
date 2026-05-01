@@ -138,7 +138,7 @@ const StudyTools = ({ userClass }) => {
   return (
     <section id="study-tools" style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1rem', background: 'linear-gradient(135deg, #fff, #a1a1aa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: '800', marginBottom: '1rem', background: 'linear-gradient(135deg, #fff, #a1a1aa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           Study Tools
         </h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
@@ -151,70 +151,77 @@ const StudyTools = ({ userClass }) => {
         backdropFilter: 'blur(20px)', 
         border: '1px solid var(--glass-border)', 
         borderRadius: '24px', 
-        padding: '2rem',
+        padding: 'clamp(1rem, 5vw, 2rem)',
         maxWidth: '500px',
         margin: '0 auto'
       }}>
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: '0.5rem', 
+          marginBottom: '2rem', 
+          overflowX: 'auto', 
+          paddingBottom: '0.5rem',
+          scrollbarWidth: 'none'
+        }} className="no-scrollbar">
           <button 
             onClick={() => setActiveTab('calculator')}
             style={{ 
-              flex: 1, minWidth: '100px', padding: '0.75rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
+              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
               background: activeTab === 'calculator' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
               color: activeTab === 'calculator' ? '#8b5cf6' : 'var(--text-secondary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               transition: 'all 0.3s'
             }}
           >
-            <Calculator size={18} /> Math
+            <Calculator size={18} /> <span className="desktop-only">Math</span>
           </button>
           <button 
             onClick={() => setActiveTab('converter')}
             style={{ 
-              flex: 1, minWidth: '100px', padding: '0.75rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
+              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
               background: activeTab === 'converter' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
               color: activeTab === 'converter' ? '#8b5cf6' : 'var(--text-secondary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               transition: 'all 0.3s'
             }}
           >
-            <ArrowRightLeft size={18} /> Units
+            <ArrowRightLeft size={18} /> <span className="desktop-only">Units</span>
           </button>
           <button 
             onClick={() => setActiveTab('timer')}
             style={{ 
-              flex: 1, minWidth: '100px', padding: '0.75rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
+              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
               background: activeTab === 'timer' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
               color: activeTab === 'timer' ? '#8b5cf6' : 'var(--text-secondary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               transition: 'all 0.3s'
             }}
           >
-            <Clock size={18} /> Timer
+            <Clock size={18} /> <span className="desktop-only">Timer</span>
           </button>
           <button 
             onClick={() => setActiveTab('flashcards')}
             style={{ 
-              flex: 1, minWidth: '100px', padding: '0.75rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
+              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
               background: activeTab === 'flashcards' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
               color: activeTab === 'flashcards' ? '#8b5cf6' : 'var(--text-secondary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               transition: 'all 0.3s'
             }}
           >
-            <Book size={18} /> Cards
+            <Book size={18} /> <span className="desktop-only">Cards</span>
           </button>
           <button 
             onClick={() => setActiveTab('exam')}
             style={{ 
-              flex: 1, minWidth: '100px', padding: '0.75rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
+              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
               background: activeTab === 'exam' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
               color: activeTab === 'exam' ? '#8b5cf6' : 'var(--text-secondary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               transition: 'all 0.3s'
             }}
           >
-            <ClipboardList size={18} /> Exams
+            <ClipboardList size={18} /> <span className="desktop-only">Exams</span>
           </button>
         </div>
 

@@ -49,10 +49,10 @@ const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, s
     <section id="progress" style={{ padding: '8rem 2rem' }}>
       <div className="container">
         <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <h2 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: '700', marginBottom: '1rem' }}>
             Your <span style={{ color: 'var(--accent-red)' }}>Mission Control</span>
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'clamp(0.9rem, 3vw, 1.1rem)', padding: '0 1rem' }}>
             A powerful dashboard to track your learning journey and stay motivated.
           </p>
         </div>
@@ -60,19 +60,19 @@ const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, s
         <div style={{
           background: 'var(--glass-bg)',
           border: '1px solid var(--glass-border)',
-          borderRadius: '32px',
-          padding: '3rem',
+          borderRadius: 'clamp(20px, 5vw, 32px)',
+          padding: 'clamp(1.5rem, 5vw, 3rem)',
           maxWidth: '1000px',
           margin: '0 auto',
           position: 'relative',
           overflow: 'hidden'
         }}>
           {/* Header Stats */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem', flexWrap: 'wrap', gap: '2rem' }}>
-            <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div style={{ flex: '1 1 300px' }}>
               <h3 style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.5rem' }}>Welcome back, Explorer!</h3>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>You're making great progress this week</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>You're making great progress this week</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Board:</label>
                   <select 
@@ -199,7 +199,7 @@ const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, s
               <Calendar size={20} color="var(--accent-red)" />
               Daily Targets <span style={{ fontSize: '0.9rem', fontWeight: '400', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>(1 per subject)</span>
             </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
               {dailyMissions.map((t) => (
                 <motion.div 
                   key={`daily-${t.id}`}
