@@ -77,22 +77,30 @@ const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, s
       .catch(e => console.error("Leaderboard fetch error", e));
   }, [stats.xpEarned]);
 
+  const achievements = [
+    { id: 'lessons-10', title: 'Novice Scholar', desc: 'Complete 10 lessons', target: 10, current: stats.lessonsCompleted, icon: '📚' },
+    { id: 'xp-100', title: 'Fast Learner', desc: 'Earn 100 XP', target: 100, current: stats.xpEarned, icon: '⚡' },
+    { id: 'streak-3', title: 'Consistent', desc: '3 Day Streak', target: 3, current: stats.streak, icon: '🔥' },
+    { id: 'level-5', title: 'Rising Star', desc: 'Reach Level 5', target: 5, current: stats.level, icon: '⭐' }
+  ];
+
   const selectStyle = {
-    background: 'rgba(255, 255, 255, 0.05)',
+    background: 'rgba(255, 51, 68, 0.05)',
     color: 'white',
-    border: '1px solid var(--glass-border)',
+    border: '1px solid rgba(255, 51, 68, 0.2)',
     padding: '0.6rem 1.2rem',
     borderRadius: '12px',
     outline: 'none',
     cursor: 'pointer',
     fontSize: '0.85rem',
-    fontWeight: '500',
+    fontWeight: '600',
     appearance: 'none',
-    backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'rgba(255,255,255,0.5)\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E")',
+    backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'rgba(255, 51, 68, 0.8)\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E")',
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'right 1rem center',
     paddingRight: '2.5rem',
-    transition: 'all 0.3s'
+    transition: 'all 0.3s',
+    boxShadow: '0 4px 15px rgba(255, 51, 68, 0.05)'
   };
 
   return (
@@ -297,6 +305,46 @@ const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, s
                   </div>
                 </motion.div>
               )}
+            </div>
+          </div>
+
+          {/* Achievements */}
+          <div style={{ marginBottom: '4rem' }}>
+            <h4 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Trophy size={20} color="var(--accent-red)" />
+              Mission Achievements
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+              {achievements.map((a) => {
+                const progress = Math.min(100, (a.current / a.target) * 100);
+                const isUnlocked = progress === 100;
+                return (
+                  <div key={a.id} style={{
+                    padding: '1.5rem',
+                    background: isUnlocked ? 'rgba(255, 215, 0, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+                    border: `1px solid ${isUnlocked ? 'rgba(255, 215, 0, 0.3)' : 'var(--glass-border)'}`,
+                    borderRadius: '24px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>{isUnlocked ? '🏆' : a.icon}</div>
+                    <div style={{ fontWeight: '700', marginBottom: '0.25rem', color: isUnlocked ? '#ffd700' : 'white' }}>{a.title}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>{a.desc}</div>
+                    
+                    <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        style={{ height: '100%', background: isUnlocked ? '#ffd700' : 'var(--accent-red)', boxShadow: isUnlocked ? '0 0 10px #ffd700' : 'none' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.75rem', fontWeight: '600' }}>
+                      <span style={{ color: isUnlocked ? '#ffd700' : 'var(--text-secondary)' }}>{a.current} / {a.target}</span>
+                      {isUnlocked && <span style={{ color: '#ffd700' }}>Unlocked!</span>}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

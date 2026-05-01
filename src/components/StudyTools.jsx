@@ -1,7 +1,219 @@
+import { Calculator, ArrowRightLeft, Clock, Book, Loader2, Sparkles, ClipboardList, Volume2, Mic, StopCircle, Play, AlertCircle } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, ArrowRightLeft, Clock, Book, Loader2, Sparkles, ClipboardList } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const SpeakingTab = ({ userClass, genAI }) => {
+  const [targetText, setTargetText] = useState("The quick brown fox jumps over the lazy dog.");
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  const recognitionRef = React.useRef(null);
+  const mediaRecorderRef = React.useRef(null);
+  const audioChunksRef = React.useRef([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        setAudioUrl(URL.createObjectURL(audioBlob));
+      };
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.onresult = (event) => {
+          const current = event.resultIndex;
+          const result = event.results[current][0].transcript;
+          setTranscript(result);
+        };
+        recognitionRef.current.start();
+      }
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      setFeedback(null);
+    } catch (err) {
+      console.error("Mic error:", err);
+      alert("Please allow microphone access to practice speaking.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
+    if (recognitionRef.current) recognitionRef.current.stop();
+    setIsRecording(false);
+    analyzeSpeech();
+  };
+
+  const analyzeSpeech = async () => {
+    if (!transcript) return;
+    setIsAnalyzing(true);
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const prompt = `You are a pronunciation coach.
+Target Sentence: "${targetText}"
+Student Spoke: "${transcript}"
+
+Task:
+1. Compare the student's speech with the target.
+2. Identify specific words they mispronounced or skipped.
+3. Give a pronunciation score out of 100.
+4. Provide 2-3 tips for improvement.
+
+Return ONLY a raw JSON object:
+{
+  "score": number,
+  "mistakes": ["word1", "word2"],
+  "tips": ["tip1", "tip2"],
+  "feedback": "Encouraging summary"
+}
+Do not wrap in markdown. Just raw JSON.`;
+
+      const result = await model.generateContent(prompt);
+      let text = result.response.text();
+      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(text);
+      setFeedback(parsed);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const generateNewSentence = async () => {
+    setIsAnalyzing(true);
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const prompt = `Generate a single short sentence for a Class ${userClass} student to practice speaking and pronunciation. Keep it simple and age-appropriate. Just the text, no quotes.`;
+      const result = await model.generateContent(prompt);
+      setTargetText(result.response.text().trim());
+      setTranscript('');
+      setAudioUrl(null);
+      setFeedback(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <div style={{ background: 'rgba(255,255,255,0.02)', padding: '2rem', borderRadius: '24px', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
+        <h5 style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Sentence</h5>
+        <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white', lineHeight: '1.4', marginBottom: '1.5rem' }}>"{targetText}"</p>
+        <button 
+          onClick={generateNewSentence}
+          style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', padding: '0.5rem 1rem', borderRadius: '100px', fontSize: '0.8rem', cursor: 'pointer' }}
+        >
+          Generate New Sentence
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={isRecording ? stopRecording : startRecording}
+          style={{
+            width: '80px', height: '80px', borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: isRecording ? 'rgba(255, 51, 68, 0.2)' : 'var(--accent-red)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: isRecording ? '0 0 30px rgba(255, 51, 68, 0.3)' : '0 10px 25px rgba(255, 51, 68, 0.4)',
+            color: 'white', position: 'relative'
+          }}
+        >
+          {isRecording ? <StopCircle size={32} /> : <Mic size={32} />}
+          {isRecording && (
+            <motion.div 
+              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '2px solid var(--accent-red)' }}
+            />
+          )}
+        </motion.button>
+        <p style={{ fontWeight: '600', color: isRecording ? 'var(--accent-red)' : 'var(--text-secondary)' }}>
+          {isRecording ? "Listening... Speak now!" : "Tap to record your pronunciation"}
+        </p>
+
+        {transcript && (
+          <div style={{ width: '100%', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>You said:</div>
+            <div style={{ fontStyle: 'italic', color: 'white' }}>"{transcript}"</div>
+          </div>
+        )}
+
+        {audioUrl && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '16px' }}>
+            <button onClick={() => new Audio(audioUrl).play()} style={{ background: 'var(--accent-red)', border: 'none', color: 'white', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer' }}>
+              <Play size={16} fill="white" />
+            </button>
+            <div style={{ flex: 1, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Recording saved temporarily. Tap to listen back.</div>
+          </div>
+        )}
+
+        {isAnalyzing && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--accent-red)' }}>
+            <Loader2 size={20} style={{ animation: 'spin 2s linear infinite' }} />
+            <span style={{ fontWeight: '600' }}>AI Coach is analyzing...</span>
+          </div>
+        )}
+
+        {feedback && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ width: '100%', background: 'rgba(255, 51, 68, 0.05)', padding: '1.5rem', borderRadius: '24px', border: '1px solid rgba(255, 51, 68, 0.2)' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h6 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>Analysis Result</h6>
+              <div style={{ background: 'var(--accent-red)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '100px', fontWeight: '800', fontSize: '0.9rem' }}>
+                {feedback.score}%
+              </div>
+            </div>
+            
+            <p style={{ fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>{feedback.feedback}</p>
+            
+            {feedback.mistakes?.length > 0 && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-red)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>Mistakes Spotted:</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {feedback.mistakes.map((m, i) => (
+                    <span key={i} style={{ background: 'rgba(255, 51, 68, 0.1)', color: 'var(--accent-red)', padding: '0.25rem 0.6rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600' }}>
+                      {m}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#10b981', marginBottom: '0.75rem', textTransform: 'uppercase' }}>Tips to Improve:</div>
+              <ul style={{ paddingLeft: '1.25rem', margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                {feedback.tips.map((t, i) => <li key={i} style={{ marginBottom: '0.5rem' }}>{t}</li>)}
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const StudyTools = ({ userClass }) => {
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
@@ -223,7 +435,21 @@ const StudyTools = ({ userClass }) => {
           >
             <ClipboardList size={18} /> <span className="desktop-only">Exams</span>
           </button>
+          <button 
+            onClick={() => setActiveTab('speaking')}
+            style={{ 
+              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
+              background: activeTab === 'speaking' ? 'rgba(255, 51, 68, 0.2)' : 'transparent',
+              color: activeTab === 'speaking' ? 'var(--accent-red)' : 'var(--text-secondary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              transition: 'all 0.3s'
+            }}
+          >
+            <Volume2 size={18} /> <span className="desktop-only">Speaking</span>
+          </button>
         </div>
+
+        {activeTab === 'speaking' && <SpeakingTab userClass={userClass} genAI={genAI} />}
 
         {activeTab === 'calculator' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
