@@ -36,9 +36,15 @@ const SpeakingTab = ({ userClass, genAI }) => {
         recognitionRef.current.continuous = true;
         recognitionRef.current.interimResults = true;
         recognitionRef.current.onresult = (event) => {
-          const current = event.resultIndex;
-          const result = event.results[current][0].transcript;
-          setTranscript(result);
+          let finalTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            finalTranscript += event.results[i][0].transcript;
+          }
+          setTranscript(finalTranscript);
+        };
+        recognitionRef.current.onend = () => {
+          // Trigger analysis after recognition ends to ensure we have the full text
+          setIsRecording(false);
         };
         recognitionRef.current.start();
       }
@@ -46,6 +52,7 @@ const SpeakingTab = ({ userClass, genAI }) => {
       mediaRecorderRef.current.start();
       setIsRecording(true);
       setFeedback(null);
+      setTranscript('');
     } catch (err) {
       console.error("Mic error:", err);
       alert("Please allow microphone access to practice speaking.");
@@ -56,17 +63,24 @@ const SpeakingTab = ({ userClass, genAI }) => {
     if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
     if (recognitionRef.current) recognitionRef.current.stop();
     setIsRecording(false);
-    analyzeSpeech();
+    // Wait a tiny bit for the last result to process
+    setTimeout(() => {
+      analyzeSpeech();
+    }, 500);
   };
 
-  const analyzeSpeech = async () => {
-    if (!transcript) return;
+  const analyzeSpeech = async (manualTranscript = null) => {
+    const textToAnalyze = manualTranscript || transcript;
+    if (!textToAnalyze) {
+      console.warn("No transcript to analyze");
+      return;
+    }
     setIsAnalyzing(true);
     try {
       const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
       const prompt = `You are an expert pronunciation coach.
 Target Sentence: "${targetText}"
-Student Spoke: "${transcript}"
+Student Spoke: "${textToAnalyze}"
 
 Task:
 1. Compare the student's speech with the target.
