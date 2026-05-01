@@ -42,14 +42,36 @@ function App() {
   };
 
   // Global User State
-  const [userStats, setUserStats] = useState({
-    studyTime: 0,
-    lessonsCompleted: 0,
-    xpEarned: currentUser?.xpEarned || 0,
-    nextGoal: "3 days until Math Exam",
-    streak: currentUser?.streak || 0,
-    level: currentUser?.level || 1
+  const [userStats, setUserStats] = useState(() => {
+    const saved = localStorage.getItem('antigravity_current_user');
+    const user = saved ? JSON.parse(saved) : null;
+    return {
+      studyTime: 0,
+      lessonsCompleted: 0,
+      xpEarned: user?.xpEarned || 0,
+      dailyXP: user?.dailyXP || 0,
+      sessionXP: 0,
+      nextGoal: "3 days until Math Exam",
+      streak: user?.streak || 0,
+      level: user?.level || 1
+    };
   });
+
+  // Update localStorage whenever userStats changes
+  useEffect(() => {
+    if (currentUser) {
+      const updatedUser = { 
+        ...currentUser, 
+        xpEarned: userStats.xpEarned, 
+        dailyXP: userStats.dailyXP,
+        level: userStats.level, 
+        streak: userStats.streak,
+        selectedClass 
+      };
+      localStorage.setItem('antigravity_current_user', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+    }
+  }, [userStats.xpEarned, userStats.dailyXP, userStats.level, userStats.streak, selectedClass]);
 
   // Sync Progress to Backend
   useEffect(() => {
@@ -68,10 +90,18 @@ function App() {
             selectedClass: selectedClass,
             streak: userStats.streak
           })
-        }).catch(e => console.error('Failed to sync progress:', e));
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.dailyXP !== undefined) {
+             // Keep dailyXP in sync with server logic
+             setUserStats(prev => ({ ...prev, dailyXP: data.dailyXP }));
+          }
+        })
+        .catch(e => console.error('Failed to sync progress:', e));
       }
     }
-  }, [userStats.xpEarned, userStats.level, selectedClass, userStats.streak, currentUser]);
+  }, [userStats.xpEarned, userStats.level, selectedClass, userStats.streak, currentUser?.id]);
 
   const getInitialSubjects = (classNum) => {
     const allSubjects = [
@@ -383,6 +413,8 @@ function App() {
           ...prev,
           lessonsCompleted: prev.lessonsCompleted + (newStatus ? 1 : -1),
           xpEarned: prev.xpEarned + (newStatus ? task.xp : -task.xp),
+          dailyXP: prev.dailyXP + (newStatus ? task.xp : -task.xp),
+          sessionXP: prev.sessionXP + (newStatus ? task.xp : -task.xp),
           level: Math.floor((prev.xpEarned + (newStatus ? task.xp : -task.xp)) / 500) + 1
         }));
 

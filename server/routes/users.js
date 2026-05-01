@@ -20,11 +20,26 @@ const auth = (req, res, next) => {
 // @desc    Update user xp and level
 router.put('/progress', auth, async (req, res) => {
   const { xpEarned, level, selectedClass, streak } = req.body;
+  const today = new Date().toISOString().split('T')[0];
+
   try {
     let user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
-    if (xpEarned !== undefined) user.xpEarned = xpEarned;
+    // Handle daily XP reset
+    if (user.lastActiveDate !== today) {
+      user.dailyXP = 0;
+      user.lastActiveDate = today;
+    }
+
+    if (xpEarned !== undefined) {
+      const diff = xpEarned - user.xpEarned;
+      if (diff > 0) {
+        user.dailyXP += diff;
+      }
+      user.xpEarned = xpEarned;
+    }
+    
     if (level !== undefined) user.level = level;
     if (selectedClass !== undefined) user.selectedClass = selectedClass;
     if (streak !== undefined) user.streak = streak;

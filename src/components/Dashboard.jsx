@@ -3,10 +3,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, BookOpen, Star, Calendar, CheckCircle2, Circle, Flame, Trophy, Crown } from 'lucide-react';
 
 const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, selectedBoard, onBoardChange, onStartLesson, dailyMissions }) => {
+  const [xpType, setXpType] = useState('total'); // 'total', 'today', 'session'
+
+  const getXPValue = () => {
+    switch(xpType) {
+      case 'today': return stats.dailyXP;
+      case 'session': return stats.sessionXP;
+      default: return stats.xpEarned;
+    }
+  };
+
+  const getXPSub = () => {
+    switch(xpType) {
+      case 'today': return "Earned Today";
+      case 'session': return "This Session";
+      default: return "All Time";
+    }
+  };
+
   const statCards = [
     { label: "Study Time", value: `${stats.studyTime}h`, sub: "This week", icon: <Clock size={18} /> },
     { label: "Lessons", value: stats.lessonsCompleted, sub: "Completed", icon: <BookOpen size={18} /> },
-    { label: "XP Earned", value: stats.xpEarned.toLocaleString(), sub: "This month", icon: <Star size={18} /> },
+    { 
+      label: "XP", 
+      value: getXPValue().toLocaleString(), 
+      sub: getXPSub(), 
+      icon: <Star size={18} />,
+      isXP: true
+    },
     { label: "Next Goal", value: stats.nextGoal.split(' ')[0] + ' ' + stats.nextGoal.split(' ')[1], sub: stats.nextGoal.split(' ').slice(2).join(' '), icon: <Calendar size={18} /> }
   ];
 
@@ -147,11 +171,35 @@ const Dashboard = ({ stats, tasks, onToggleTask, selectedClass, onClassChange, s
                 transition={{ delay: i * 0.1 }}
                 style={{ 
                   padding: '1.5rem', background: 'rgba(255, 255, 255, 0.02)', 
-                  borderRadius: '20px', border: '1px solid var(--glass-border)'
+                  borderRadius: '20px', border: '1px solid var(--glass-border)',
+                  position: 'relative'
                 }}
               >
-                <div style={{ color: 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {s.icon} <span style={{ fontSize: '0.85rem' }}>{s.label}</span>
+                <div style={{ color: 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {s.icon} <span style={{ fontSize: '0.85rem' }}>{s.label}</span>
+                  </div>
+                  {s.isXP && (
+                    <select 
+                      value={xpType}
+                      onChange={(e) => setXpType(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        background: 'transparent',
+                        color: 'var(--accent-red)',
+                        border: 'none',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        padding: '0'
+                      }}
+                    >
+                      <option value="total">Total</option>
+                      <option value="today">Today</option>
+                      <option value="session">Session</option>
+                    </select>
+                  )}
                 </div>
                 <motion.div 
                   key={s.value}

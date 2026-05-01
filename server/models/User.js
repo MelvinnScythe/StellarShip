@@ -22,6 +22,14 @@ const UserSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  dailyXP: {
+    type: Number,
+    default: 0
+  },
+  lastActiveDate: {
+    type: String, // Store as YYYY-MM-DD
+    default: new Date().toISOString().split('T')[0]
+  },
   level: {
     type: Number,
     default: 1
