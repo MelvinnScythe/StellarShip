@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { speak } from '../utils/speech';
 
-const TTSButton = ({ text, language, size = 18 }) => {
+const TTSButton = ({ text, language, size = 18, mood = 'friendly' }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   const handleSpeak = (e) => {
@@ -13,7 +13,7 @@ const TTSButton = ({ text, language, size = 18 }) => {
     } else {
       // Strip HTML if present
       const cleanText = text.replace(/<[^>]*>?/gm, '');
-      speak(cleanText, language);
+      speak(cleanText, language, { mood });
       setIsSpeaking(true);
       
       // Reset icon when speech finishes

@@ -74,15 +74,30 @@ const AITutor = ({ userClass }) => {
 IMPORTANT FORMATTING RULES:
 1. Use markdown formatting freely.
 2. IMPORTANT: You MUST use LaTeX for math equations. Wrap inline math with a single dollar sign (e.g. $F = ma$) and block math with double dollar signs.
-3. Keep answers simple, easy to understand, and perfectly suited for their grade level. If they ask about a complex topic, explain it so a Class ${userClass || 'elementary/middle'} student can fully understand it.\n\nStudent: ${input}`;
+3. Keep answers simple, easy to understand, and perfectly suited for their grade level.
+
+MOOD DETECTION:
+At the very beginning of your response, start with a mood tag in brackets. Choose ONE from: [MOOD: excited], [MOOD: happy], [MOOD: sad], [MOOD: serious], [MOOD: friendly], [MOOD: neutral], [MOOD: encouraging].
+Example: "[MOOD: encouraging] That's a great question! Let's solve it together..."
+
+Student: ${input}`;
       
       const result = await model.generateContent(prompt);
-      const text = result.response.text();
+      const fullText = result.response.text();
       
-      setMessages(prev => [...prev, { role: 'model', text }]);
+      // Parse mood
+      let mood = 'friendly';
+      let cleanText = fullText;
+      const moodMatch = fullText.match(/^\[MOOD: (.*?)\]/);
+      if (moodMatch) {
+        mood = moodMatch[1].toLowerCase();
+        cleanText = fullText.replace(/^\[MOOD: .*?\]\s*/, '');
+      }
+      
+      setMessages(prev => [...prev, { role: 'model', text: cleanText, mood }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: `Connection Error: ${error.message}. Please check if the Generative Language API is enabled for this key.` }]);
+      setMessages(prev => [...prev, { role: 'model', text: `Connection Error: ${error.message}. Please check if the Generative Language API is enabled for this key.`, mood: 'serious' }]);
     } finally {
       setIsLoading(false);
     }
@@ -180,7 +195,7 @@ IMPORTANT FORMATTING RULES:
               </div>
             </div>
 
-            {/* Voice Settings Panel */}
+            {/* Voice Settings Panel ... */}
             <AnimatePresence>
               {showVoiceSettings && (
                 <motion.div
@@ -229,13 +244,11 @@ IMPORTANT FORMATTING RULES:
                         ))}
                       </optgroup>
                     </select>
-                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                      Tip: "Google" or "Microsoft" voices usually sound most human.
-                    </p>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
+
             {/* Messages Area */}
             <div style={{
               flex: 1,
@@ -285,7 +298,7 @@ IMPORTANT FORMATTING RULES:
                     </div>
                     {msg.role === 'model' && (
                       <div style={{ marginLeft: '4px' }}>
-                        <TTSButton text={msg.text} size={14} />
+                        <TTSButton text={msg.text} size={14} mood={msg.mood} />
                       </div>
                     )}
                   </div>
