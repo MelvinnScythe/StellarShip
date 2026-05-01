@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Bot, User, Loader2, Maximize2, Minimize2 } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2, Maximize2, Minimize2, Settings, Volume2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import TTSButton from './TTSButton';
+import { getAvailableVoices, setPreferredVoice } from '../utils/speech';
 
 // Initialize the Gemini API
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
@@ -14,12 +15,39 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 const AITutor = ({ userClass }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [voices, setVoices] = useState([]);
+  const [selectedVoiceName, setSelectedVoiceName] = useState('');
+  
   const [messages, setMessages] = useState([
     { role: 'model', text: "Hi there! I'm your AI Study Buddy. Ask me any doubts you have about your subjects!" }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    const loadVoices = () => {
+      const available = getAvailableVoices();
+      setVoices(available);
+      // Try to find a default good voice
+      const defaultVoice = available.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.localService));
+      if (defaultVoice) setSelectedVoiceName(defaultVoice.name);
+    };
+
+    loadVoices();
+    if (window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
+
+  const handleVoiceChange = (voiceName) => {
+    const voice = voices.find(v => v.name === voiceName);
+    if (voice) {
+      setSelectedVoiceName(voiceName);
+      setPreferredVoice(voice);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -133,7 +161,14 @@ IMPORTANT FORMATTING RULES:
                   <span style={{ fontSize: '0.75rem', color: '#4dff88' }}>● Online</span>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <button 
+                  onClick={() => setShowVoiceSettings(!showVoiceSettings)} 
+                  style={{ background: 'none', border: 'none', color: showVoiceSettings ? 'var(--accent-red)' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  title="Voice Settings"
+                >
+                  <Settings size={18} />
+                </button>
                 {window.innerWidth > 768 && (
                   <button onClick={() => setIsExpanded(!isExpanded)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                     {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
@@ -145,6 +180,62 @@ IMPORTANT FORMATTING RULES:
               </div>
             </div>
 
+            {/* Voice Settings Panel */}
+            <AnimatePresence>
+              {showVoiceSettings && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    borderBottom: '1px solid var(--glass-border)',
+                    overflow: 'hidden',
+                    padding: '1rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                      <Volume2 size={14} />
+                      <span>Select preferred learning voice:</span>
+                    </div>
+                    <select 
+                      value={selectedVoiceName}
+                      onChange={(e) => handleVoiceChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid var(--glass-border)',
+                        borderRadius: '8px',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        outline: 'none'
+                      }}
+                    >
+                      <optgroup label="English Voices">
+                        {voices.filter(v => v.lang.startsWith('en')).map(v => (
+                          <option key={v.name} value={v.name}>{v.name} {v.localService ? '(HD)' : ''}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Hindi Voices">
+                        {voices.filter(v => v.lang.startsWith('hi')).map(v => (
+                          <option key={v.name} value={v.name}>{v.name}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Other Voices">
+                        {voices.filter(v => !v.lang.startsWith('en') && !v.lang.startsWith('hi')).map(v => (
+                          <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+                        ))}
+                      </optgroup>
+                    </select>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                      Tip: "Google" or "Microsoft" voices usually sound most human.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             {/* Messages Area */}
             <div style={{
               flex: 1,
