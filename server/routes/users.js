@@ -16,6 +16,19 @@ const auth = (req, res, next) => {
   }
 };
 
+// @route   GET api/users/me
+// @desc    Get current user profile
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 // @route   PUT api/users/progress
 // @desc    Update user xp and level
 router.put('/progress', auth, async (req, res) => {

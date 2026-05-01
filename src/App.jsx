@@ -42,20 +42,41 @@ function App() {
   };
 
   // Global User State
-  const [userStats, setUserStats] = useState(() => {
-    const saved = localStorage.getItem('antigravity_current_user');
-    const user = saved ? JSON.parse(saved) : null;
-    return {
-      studyTime: 0,
-      lessonsCompleted: 0,
-      xpEarned: user?.xpEarned || 0,
-      dailyXP: user?.dailyXP || 0,
-      sessionXP: 0,
-      nextGoal: "3 days until Math Exam",
-      streak: user?.streak || 0,
-      level: user?.level || 1
-    };
+  const [userStats, setUserStats] = useState({
+    studyTime: 0,
+    lessonsCompleted: 0,
+    xpEarned: currentUser?.xpEarned || 0,
+    dailyXP: currentUser?.dailyXP || 0,
+    sessionXP: 0,
+    nextGoal: "3 days until Math Exam",
+    streak: currentUser?.streak || 0,
+    level: currentUser?.level || 1
   });
+
+  // Fetch latest profile on mount
+  useEffect(() => {
+    const token = localStorage.getItem('antigravity_token');
+    if (token && currentUser) {
+      fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(user => {
+        if (user && user.xpEarned !== undefined) {
+          setCurrentUser(user);
+          setUserStats(prev => ({
+            ...prev,
+            xpEarned: user.xpEarned,
+            dailyXP: user.dailyXP || 0,
+            level: user.level || 1,
+            streak: user.streak || 0
+          }));
+          localStorage.setItem('antigravity_current_user', JSON.stringify(user));
+        }
+      })
+      .catch(e => console.error("Failed to fetch profile", e));
+    }
+  }, []);
 
   // Update localStorage whenever userStats changes
   useEffect(() => {
