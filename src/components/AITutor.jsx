@@ -218,14 +218,20 @@ Student: ${input}`;
                       value={selectedVoiceName}
                       onChange={(e) => handleVoiceChange(e.target.value)}
                       style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        border: '1px solid var(--glass-border)',
-                        borderRadius: '8px',
+                        background: 'rgba(255, 255, 255, 0.05)',
                         color: 'white',
-                        fontSize: '0.85rem',
-                        outline: 'none'
+                        border: '1px solid var(--glass-border)',
+                        padding: '0.6rem 1rem',
+                        borderRadius: '12px',
+                        fontSize: '0.8rem',
+                        width: '100%',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        appearance: 'none',
+                        backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'rgba(255,255,255,0.5)\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E")',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 0.75rem center',
+                        paddingRight: '2.5rem'
                       }}
                     >
                       <optgroup label="English Voices">
