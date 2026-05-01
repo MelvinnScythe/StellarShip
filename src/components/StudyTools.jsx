@@ -148,30 +148,56 @@ Do not wrap in markdown. Just raw JSON.`;
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={isRecording ? stopRecording : startRecording}
-          style={{
-            width: '80px', height: '80px', borderRadius: '50%', border: 'none', cursor: 'pointer',
-            background: isRecording ? 'rgba(255, 51, 68, 0.2)' : 'var(--accent-red)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: isRecording ? '0 0 30px rgba(255, 51, 68, 0.3)' : '0 10px 25px rgba(255, 51, 68, 0.4)',
-            color: 'white', position: 'relative'
-          }}
-        >
-          {isRecording ? <StopCircle size={32} /> : <Mic size={32} />}
-          {isRecording && (
-            <motion.div 
-              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '2px solid var(--accent-red)' }}
-            />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={isRecording ? stopRecording : startRecording}
+            style={{
+              width: '80px', height: '80px', borderRadius: '50%', border: 'none', cursor: 'pointer',
+              background: isRecording ? 'rgba(255, 51, 68, 0.2)' : 'var(--accent-red)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: isRecording ? '0 0 30px rgba(255, 51, 68, 0.3)' : '0 10px 25px rgba(255, 51, 68, 0.4)',
+              color: 'white', position: 'relative'
+            }}
+          >
+            {isRecording ? <StopCircle size={32} /> : <Mic size={32} />}
+            {isRecording && (
+              <motion.div 
+                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+                style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '2px solid var(--accent-red)' }}
+              />
+            )}
+          </motion.button>
+
+          {!isRecording && transcript && !feedback && !isAnalyzing && (
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              onClick={() => analyzeSpeech()}
+              style={{
+                background: 'var(--accent-red)', color: 'white', border: 'none',
+                padding: '1rem 2rem', borderRadius: '100px', fontWeight: '700',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem',
+                boxShadow: '0 10px 20px rgba(255, 51, 68, 0.2)'
+              }}
+            >
+              <Sparkles size={20} /> Analyze My Speech
+            </motion.button>
           )}
-        </motion.button>
+        </div>
+
         <p style={{ fontWeight: '600', color: isRecording ? 'var(--accent-red)' : 'var(--text-secondary)' }}>
-          {isRecording ? "Listening... Speak now!" : "Tap to record your pronunciation"}
+          {isRecording ? "Listening... Speak now!" : (transcript ? "Recording captured! Click Analyze below." : "Tap to record your pronunciation")}
         </p>
+
+        {isAnalyzing && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--accent-red)', fontWeight: '700', marginBottom: '1rem' }}>
+            <Loader2 className="spin" size={20} />
+            🚀 AI Coach is analyzing...
+          </div>
+        )}
 
         {transcript && (
           <div style={{ width: '100%', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
