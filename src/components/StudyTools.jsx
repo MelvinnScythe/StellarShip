@@ -215,9 +215,9 @@ Do not wrap in markdown. Just raw JSON.`;
   );
 };
 
-const StudyTools = ({ userClass }) => {
+const StudyTools = ({ userClass, initialTab = 'calculator', isFullscreen = false }) => {
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-  const [activeTab, setActiveTab] = useState('calculator');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [calcInput, setCalcInput] = useState('');
   const [unitValue, setUnitValue] = useState('');
   const [unitType, setUnitType] = useState('cmToM');
@@ -348,15 +348,17 @@ const StudyTools = ({ userClass }) => {
   };
 
   return (
-    <section id="study-tools" style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: '800', marginBottom: '1rem', background: 'linear-gradient(135deg, #fff, #a1a1aa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Study Tools
-        </h2>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
-          Quick utilities to help you solve problems faster.
-        </p>
-      </div>
+    <section id="study-tools" style={{ padding: isFullscreen ? '0' : '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      {!isFullscreen && (
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: '800', marginBottom: '1rem', background: 'linear-gradient(135deg, #fff, #a1a1aa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Study Tools
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
+            Quick utilities to help you solve problems faster.
+          </p>
+        </div>
+      )}
 
       <div style={{ 
         background: 'rgba(255, 255, 255, 0.03)', 
@@ -364,7 +366,7 @@ const StudyTools = ({ userClass }) => {
         border: '1px solid var(--glass-border)', 
         borderRadius: '24px', 
         padding: 'clamp(1rem, 5vw, 2rem)',
-        maxWidth: '500px',
+        maxWidth: isFullscreen ? '100%' : '500px',
         margin: '0 auto'
       }}>
         <div style={{ 

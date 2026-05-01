@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { Rocket, LogOut, User, Menu, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = ({ user, onLogout }) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
-  const navLinks = ['Features', 'Subjects', 'Progress'];
+  const navLinks = [
+    { name: 'Features', path: '/home#features' },
+    { name: 'Subjects', path: '/home#subjects' },
+    { name: 'Progress', path: '/home#progress' },
+    { name: 'Speaking', path: '/speaking' }
+  ];
   return (
     <nav style={{
       padding: '1rem 1.5rem',
@@ -22,7 +26,10 @@ const Navbar = ({ user, onLogout }) => {
       background: 'rgba(5, 5, 8, 0.8)',
       borderBottom: '1px solid var(--glass-border)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div 
+        onClick={() => navigate('/home')}
+        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
+      >
         <div style={{
           background: 'var(--accent-red)',
           padding: '0.5rem',
@@ -42,15 +49,34 @@ const Navbar = ({ user, onLogout }) => {
       {/* Desktop Links */}
       <div className="desktop-only" style={{ display: 'flex', gap: '2.5rem', alignItems: 'center' }}>
         {navLinks.map((item) => (
-          <a key={item} href={`#${item.toLowerCase()}`} style={{
-            fontSize: '0.9rem',
-            fontWeight: '500',
-            color: 'var(--text-secondary)',
-            transition: 'color 0.3s'
-          }} onMouseOver={(e) => e.target.style.color = 'white'} 
-             onMouseOut={(e) => e.target.style.color = 'var(--text-secondary)'}>
-            {item}
-          </a>
+          <button 
+            key={item.name} 
+            onClick={() => {
+              if (item.path.includes('#')) {
+                const [base, hash] = item.path.split('#');
+                navigate(base);
+                setTimeout(() => {
+                  const el = document.getElementById(hash);
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              } else {
+                navigate(item.path);
+              }
+            }}
+            style={{
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              color: 'var(--text-secondary)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'color 0.3s'
+            }} 
+            onMouseOver={(e) => e.target.style.color = 'white'} 
+            onMouseOut={(e) => e.target.style.color = 'var(--text-secondary)'}
+          >
+            {item.name}
+          </button>
         ))}
       </div>
 
@@ -138,18 +164,33 @@ const Navbar = ({ user, onLogout }) => {
             }}
           >
             {navLinks.map((item) => (
-              <a 
-                key={item} 
-                href={`#${item.toLowerCase()}`} 
-                onClick={() => setIsOpen(false)}
+              <button 
+                key={item.name} 
+                onClick={() => {
+                  setIsOpen(false);
+                  if (item.path.includes('#')) {
+                    const [base, hash] = item.path.split('#');
+                    navigate(base);
+                    setTimeout(() => {
+                      const el = document.getElementById(hash);
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                  } else {
+                    navigate(item.path);
+                  }
+                }}
                 style={{
                   fontSize: '1.5rem',
-                  fontWeight: '600',
-                  color: 'white'
+                  fontWeight: '700',
+                  color: 'white',
+                  background: 'none',
+                  border: 'none',
+                  textAlign: 'left',
+                  cursor: 'pointer'
                 }}
               >
-                {item}
-              </a>
+                {item.name}
+              </button>
             ))}
             
             <div style={{ marginTop: 'auto', borderTop: '1px solid var(--glass-border)', paddingTop: '2rem' }}>
