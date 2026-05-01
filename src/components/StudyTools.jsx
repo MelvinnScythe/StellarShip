@@ -64,7 +64,7 @@ const SpeakingTab = ({ userClass, genAI }) => {
     setIsAnalyzing(true);
     try {
       const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      const prompt = `You are a pronunciation coach.
+      const prompt = `You are an expert pronunciation coach.
 Target Sentence: "${targetText}"
 Student Spoke: "${transcript}"
 
@@ -72,14 +72,22 @@ Task:
 1. Compare the student's speech with the target.
 2. Identify specific words they mispronounced or skipped.
 3. Give a pronunciation score out of 100.
-4. Provide 2-3 tips for improvement.
+4. Provide a detailed phonetic breakdown for EACH word in the target sentence.
+5. Provide a "Rhythm and Flow" guide using slashes for pauses and bold for emphasis.
+6. Provide 2-3 specific "Delivery Tips" for sounds in this sentence.
 
 Return ONLY a raw JSON object:
 {
   "score": number,
   "mistakes": ["word1", "word2"],
-  "tips": ["tip1", "tip2"],
-  "feedback": "Encouraging summary"
+  "feedback": "Encouraging summary",
+  "phoneticBreakdown": [
+    {"word": "The", "phonetic": "thuh", "tip": "Soft 'th', don't over-emphasize."},
+    ...
+  ],
+  "fullPhonetic": "thuh kwik brown foks...",
+  "rhythmAndFlow": "The **quick** brown **fox** / jumps **o-ver** / the **lay-zy** dog.",
+  "deliveryTips": ["The 'V' in Over: ...", "The 'Z' in Lazy: ..."]
 }
 Do not wrap in markdown. Just raw JSON.`;
 
@@ -180,18 +188,19 @@ Do not wrap in markdown. Just raw JSON.`;
             animate={{ opacity: 1, y: 0 }}
             style={{ width: '100%', background: 'rgba(255, 51, 68, 0.05)', padding: '1.5rem', borderRadius: '24px', border: '1px solid rgba(255, 51, 68, 0.2)' }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h6 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>Analysis Result</h6>
               <div style={{ background: 'var(--accent-red)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '100px', fontWeight: '800', fontSize: '0.9rem' }}>
                 {feedback.score}%
               </div>
             </div>
             
-            <p style={{ fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>{feedback.feedback}</p>
+            <p style={{ fontSize: '0.95rem', marginBottom: '2rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>{feedback.feedback}</p>
             
+            {/* Mistakes Spotted */}
             {feedback.mistakes?.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-red)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>Mistakes Spotted:</div>
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-red)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mistakes Spotted</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {feedback.mistakes.map((m, i) => (
                     <span key={i} style={{ background: 'rgba(255, 51, 68, 0.1)', color: 'var(--accent-red)', padding: '0.25rem 0.6rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600' }}>
@@ -201,13 +210,73 @@ Do not wrap in markdown. Just raw JSON.`;
                 </div>
               </div>
             )}
+            
+            {/* Phonetic Table */}
+            {feedback.phoneticBreakdown && (
+              <div style={{ marginBottom: '2rem', overflowX: 'auto' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-red)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phonetic Breakdown</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                      <th style={{ textAlign: 'left', padding: '0.75rem', color: 'var(--text-secondary)' }}>Word</th>
+                      <th style={{ textAlign: 'left', padding: '0.75rem', color: 'var(--text-secondary)' }}>Sound</th>
+                      <th style={{ textAlign: 'left', padding: '0.75rem', color: 'var(--text-secondary)' }}>Tip</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {feedback.phoneticBreakdown.map((item, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{ padding: '0.75rem', fontWeight: '700', color: 'white' }}>{item.word}</td>
+                        <td style={{ padding: '0.75rem', color: 'var(--accent-red)', fontFamily: 'monospace' }}>{item.phonetic}</td>
+                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{item.tip}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', textAlign: 'center', fontStyle: 'italic', color: 'var(--text-secondary)' }}>
+                  "{feedback.fullPhonetic}"
+                </div>
+              </div>
+            )}
 
-            <div>
-              <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#10b981', marginBottom: '0.75rem', textTransform: 'uppercase' }}>Tips to Improve:</div>
-              <ul style={{ paddingLeft: '1.25rem', margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                {feedback.tips.map((t, i) => <li key={i} style={{ marginBottom: '0.5rem' }}>{t}</li>)}
-              </ul>
-            </div>
+            {/* Rhythm and Flow */}
+            {feedback.rhythmAndFlow && (
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-red)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rhythm and Flow</div>
+                <div style={{ 
+                  background: 'rgba(0,0,0,0.2)', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--glass-border)',
+                  fontSize: '1.1rem', lineHeight: '1.6', color: 'white', textAlign: 'center'
+                }}>
+                  {feedback.rhythmAndFlow.split(' ').map((part, i) => {
+                    const isBold = part.startsWith('**') && part.endsWith('**');
+                    const text = isBold ? part.slice(2, -2) : part;
+                    return (
+                      <span key={i} style={{ fontWeight: isBold ? '900' : '400', color: isBold ? 'var(--accent-red)' : 'white' }}>
+                        {text}{' '}
+                      </span>
+                    );
+                  })}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem', textAlign: 'center' }}>
+                  English sentences "bounce" between important words. Emphasize the red words.
+                </div>
+              </div>
+            )}
+
+            {/* Delivery Tips */}
+            {feedback.deliveryTips && (
+              <div>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#10b981', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Delivery Tips</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {feedback.deliveryTips.map((tip, i) => (
+                    <div key={i} style={{ display: 'flex', gap: '0.75rem', background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+                      <div style={{ color: '#10b981', fontWeight: '900' }}>•</div>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>{tip}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </div>
