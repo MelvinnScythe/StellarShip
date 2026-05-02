@@ -10,6 +10,12 @@ const SpeakingTab = ({ userClass, genAI }) => {
   const [audioUrl, setAudioUrl] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [targetAnalysis, setTargetAnalysis] = useState(null);
+  const [isAnalyzingTarget, setIsAnalyzingTarget] = useState(false);
+  
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const audioRef = React.useRef(null);
   
   const recognitionRef = React.useRef(null);
   const mediaRecorderRef = React.useRef(null);
@@ -117,6 +123,37 @@ Do not wrap in markdown. Just raw JSON.`;
     }
   };
 
+  const analyzeTargetText = async () => {
+    if (!targetText) return;
+    setIsAnalyzingTarget(true);
+    setTargetAnalysis(null);
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const prompt = `Analyze this sentence for a Class ${userClass} student: "${targetText}".
+      Provide:
+      1. Simple meaning.
+      2. Grammar points (subject, verb, etc.) explained simply.
+      3. Key vocabulary words and meanings.
+      
+      Return ONLY a raw JSON object:
+      {
+        "meaning": "string",
+        "grammar": ["point1", "point2"],
+        "vocabulary": [{"word": "w1", "meaning": "m1"}]
+      }
+      Do not wrap in markdown.`;
+      
+      const result = await model.generateContent(prompt);
+      let text = result.response.text();
+      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      setTargetAnalysis(JSON.parse(text));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsAnalyzingTarget(false);
+    }
+  };
+
   const generateNewSentence = async () => {
     setIsAnalyzing(true);
     try {
@@ -134,17 +171,78 @@ Do not wrap in markdown. Just raw JSON.`;
     }
   };
 
+  const handleAudioTimeUpdate = () => {
+    if (audioRef.current) {
+      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+      setAudioProgress(progress || 0);
+    }
+  };
+
+  const skipAudio = (seconds) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.duration, audioRef.current.currentTime + seconds));
+    }
+  };
+
+  const togglePlayback = () => {
+    if (audioRef.current) {
+      if (isPlaying) audioRef.current.pause();
+      else audioRef.current.play();
+      setIsPlaying(!isPlaying);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div style={{ background: 'rgba(255,255,255,0.02)', padding: '2rem', borderRadius: '24px', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
         <h5 style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Sentence</h5>
         <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white', lineHeight: '1.4', marginBottom: '1.5rem' }}>"{targetText}"</p>
-        <button 
-          onClick={generateNewSentence}
-          style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', padding: '0.5rem 1rem', borderRadius: '100px', fontSize: '0.8rem', cursor: 'pointer' }}
-        >
-          Generate New Sentence
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button 
+            onClick={generateNewSentence}
+            style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', padding: '0.5rem 1rem', borderRadius: '100px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <ArrowRightLeft size={14} /> New Sentence
+          </button>
+          <button 
+            onClick={analyzeTargetText}
+            disabled={isAnalyzingTarget}
+            style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', color: '#8b5cf6', padding: '0.5rem 1rem', borderRadius: '100px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            {isAnalyzingTarget ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
+            Analyze Sentence
+          </button>
+        </div>
+
+        {targetAnalysis && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            style={{ marginTop: '1.5rem', textAlign: 'left', padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}
+          >
+            <div style={{ fontSize: '0.85rem', color: '#8b5cf6', fontWeight: '700', marginBottom: '0.5rem' }}>Sentence Meaning</div>
+            <p style={{ fontSize: '0.95rem', color: 'white', marginBottom: '1rem' }}>{targetAnalysis.meaning}</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Grammar</div>
+                <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  {targetAnalysis.grammar.map((g, i) => <li key={i}>{g}</li>)}
+                </ul>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Vocabulary</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {targetAnalysis.vocabulary.map((v, i) => (
+                    <div key={i} style={{ fontSize: '0.85rem' }}>
+                      <span style={{ color: 'white', fontWeight: '600' }}>{v.word}:</span> <span style={{ color: 'var(--text-secondary)' }}>{v.meaning}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
@@ -207,11 +305,43 @@ Do not wrap in markdown. Just raw JSON.`;
         )}
 
         {audioUrl && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '16px' }}>
-            <button onClick={() => new Audio(audioUrl).play()} style={{ background: 'var(--accent-red)', border: 'none', color: 'white', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer' }}>
-              <Play size={16} fill="white" />
-            </button>
-            <div style={{ flex: 1, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Recording saved temporarily. Tap to listen back.</div>
+          <div style={{ width: '100%', background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '24px', border: '1px solid var(--glass-border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <button 
+                onClick={togglePlayback} 
+                style={{ background: 'var(--accent-red)', border: 'none', color: 'white', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              >
+                {isPlaying ? <StopCircle size={20} fill="white" /> : <Play size={20} fill="white" />}
+              </button>
+              
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', position: 'relative', cursor: 'pointer' }} onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const percent = (e.clientX - rect.left) / rect.width;
+                  if (audioRef.current) audioRef.current.currentTime = audioRef.current.duration * percent;
+                }}>
+                  <div style={{ position: 'absolute', height: '100%', background: 'var(--accent-red)', width: `${audioProgress}%`, borderRadius: '2px' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  <span>{audioRef.current ? Math.floor(audioRef.current.currentTime) : 0}s</span>
+                  <span>{audioRef.current ? Math.floor(audioRef.current.duration || 0) : 0}s</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button onClick={() => skipAudio(-5)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.75rem', cursor: 'pointer' }}>-5s</button>
+              <button onClick={() => skipAudio(5)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.75rem', cursor: 'pointer' }}>+5s</button>
+            </div>
+            
+            <audio 
+              ref={audioRef} 
+              src={audioUrl} 
+              onTimeUpdate={handleAudioTimeUpdate}
+              onEnded={() => setIsPlaying(false)}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+            />
           </div>
         )}
 
