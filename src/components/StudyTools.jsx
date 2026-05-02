@@ -113,11 +113,16 @@ Do not wrap in markdown. Just raw JSON.`;
 
       const result = await model.generateContent(prompt);
       let text = result.response.text();
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(text);
-      setFeedback(parsed);
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        setFeedback(parsed);
+      } else {
+        throw new Error("Invalid response format");
+      }
     } catch (e) {
-      console.error(e);
+      console.error("Speech Analysis Error:", e);
+      alert("AI Coach failed to analyze speech. Please try again.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -129,26 +134,32 @@ Do not wrap in markdown. Just raw JSON.`;
     setTargetAnalysis(null);
     try {
       const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      const prompt = `Analyze this sentence for a Class ${userClass} student: "${targetText}".
+      const prompt = `Analyze this sentence for a Class ${userClass || 'elementary'} student: "${targetText}".
       Provide:
       1. Simple meaning.
-      2. Grammar points (subject, verb, etc.) explained simply.
+      2. Grammar points explained simply.
       3. Key vocabulary words and meanings.
       
       Return ONLY a raw JSON object:
       {
         "meaning": "string",
-        "grammar": ["point1", "point2"],
-        "vocabulary": [{"word": "w1", "meaning": "m1"}]
+        "grammar": ["string"],
+        "vocabulary": [{"word": "string", "meaning": "string"}]
       }
-      Do not wrap in markdown.`;
+      Strictly JSON. No extra text.`;
       
       const result = await model.generateContent(prompt);
       let text = result.response.text();
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      setTargetAnalysis(JSON.parse(text));
+      // More robust JSON extraction
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        setTargetAnalysis(JSON.parse(jsonMatch[0]));
+      } else {
+        throw new Error("Invalid response format");
+      }
     } catch (e) {
-      console.error(e);
+      console.error("Target Analysis Error:", e);
+      alert("AI analysis failed. Please try again.");
     } finally {
       setIsAnalyzingTarget(false);
     }
