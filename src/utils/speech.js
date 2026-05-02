@@ -16,12 +16,21 @@ const SUBJECT_LANG_MAP = {
   'Social Studies':'en-US',
 };
 
-// BCP-47 language tag → Gemini prebuilt voice name
+// BCP-47 language tag → default Gemini prebuilt voice name
 const LANG_VOICE_MAP = {
   'en-US': 'Aoede',
   'en-GB': 'Fenrir',
   'hi-IN': 'Kore',
 };
+
+// Available Gemini TTS voices the user can choose from
+export const GEMINI_VOICES = [
+  { id: 'Orus',      label: 'Orus',      desc: 'Warm & clear' },
+  { id: 'Enceladus', label: 'Enceladus', desc: 'Calm & steady' },
+  { id: 'Aoede',     label: 'Aoede',     desc: 'Bright & lively' },
+  { id: 'Fenrir',    label: 'Fenrir',    desc: 'Deep & resonant' },
+  { id: 'Kore',      label: 'Kore',      desc: 'Gentle & soft' },
+];
 
 // Currently playing Audio instance (allows stopping mid-playback)
 let currentAudio = null;
@@ -87,10 +96,10 @@ function pcmToWavBlob(pcmBase64, sampleRate = 24000) {
  *
  * @param {string} text       - Raw or HTML text to speak.
  * @param {string} language   - Subject name (e.g. 'English') or BCP-47 tag (e.g. 'hi-IN').
- * @param {object} options    - { onStart, onEnd, onError }
+ * @param {object} options    - { onStart, onEnd, onError, voiceName }
  */
 export const speak = async (text, language = 'en-US', options = {}) => {
-  const { onStart, onEnd, onError } = options;
+  const { onStart, onEnd, onError, voiceName: overrideVoice } = options;
 
   // Strip HTML tags
   const cleanText = text.replace(/<[^>]*>?/gm, '').trim();
@@ -98,7 +107,7 @@ export const speak = async (text, language = 'en-US', options = {}) => {
 
   // Resolve to a BCP-47 tag
   const langTag   = SUBJECT_LANG_MAP[language] || language;
-  const voiceName = LANG_VOICE_MAP[langTag] || 'Aoede';
+  const voiceName = overrideVoice || LANG_VOICE_MAP[langTag] || 'Aoede';
 
   // Stop any previous speech
   stopSpeaking();

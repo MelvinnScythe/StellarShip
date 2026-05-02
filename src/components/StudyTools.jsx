@@ -1,7 +1,8 @@
-import { Calculator, ArrowRightLeft, Clock, Book, Loader2, Sparkles, ClipboardList, Volume2, Mic, StopCircle, Play, AlertCircle } from 'lucide-react';
+import { Calculator, ArrowRightLeft, Clock, Book, Loader2, Sparkles, ClipboardList, Volume2, Mic, StopCircle, Play, AlertCircle, Loader } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { speak, stopSpeaking, GEMINI_VOICES } from '../utils/speech';
 
 const SpeakingTab = ({ userClass }) => {
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY_SPEAKING || import.meta.env.VITE_GEMINI_API_KEY);
@@ -12,7 +13,11 @@ const SpeakingTab = ({ userClass }) => {
   const [feedback, setFeedback] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [targetAnalysis, setTargetAnalysis] = useState(null);
+  const [isListeningForAnalysis, setIsListeningForAnalysis] = useState(false);
   const [isAnalyzingTarget, setIsAnalyzingTarget] = useState(false);
+  const analysisRecognitionRef = React.useRef(null);
+  const [selectedVoice, setSelectedVoice] = useState('Orus');
+  const [isTTSSpeaking, setIsTTSSpeaking] = useState(false);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
@@ -129,41 +134,81 @@ Do not wrap in markdown. Just raw JSON.`;
     }
   };
 
-  const analyzeTargetText = async () => {
-    if (!targetText) return;
-    setIsAnalyzingTarget(true);
-    setTargetAnalysis(null);
-    try {
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      const prompt = `Analyze this sentence for a Class ${userClass || 'elementary'} student: "${targetText}".
-      Provide:
-      1. Simple meaning.
-      2. Grammar points explained simply.
-      3. Key vocabulary words and meanings.
-      
-      Return ONLY a raw JSON object:
-      {
-        "meaning": "string",
-        "grammar": ["string"],
-        "vocabulary": [{"word": "string", "meaning": "string"}]
-      }
-      Strictly JSON. No extra text.`;
-      
-      const result = await model.generateContent(prompt);
-      let text = result.response.text();
-      // More robust JSON extraction
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        setTargetAnalysis(JSON.parse(jsonMatch[0]));
-      } else {
-        throw new Error("Invalid response format");
-      }
-    } catch (e) {
-      console.error("Target Analysis Error:", e);
-      alert("AI analysis failed. Please try again.");
-    } finally {
-      setIsAnalyzingTarget(false);
+  const listenAndAnalyze = () => {
+    if (isListeningForAnalysis) {
+      if (analysisRecognitionRef.current) analysisRecognitionRef.current.stop();
+      return;
     }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser. Try Chrome.');
+      return;
+    }
+    setTargetAnalysis(null);
+    setIsListeningForAnalysis(true);
+    const recognition = new SpeechRecognition();
+    analysisRecognitionRef.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = async (event) => {
+      const spokenText = event.results[0][0].transcript;
+      setIsListeningForAnalysis(false);
+      setIsAnalyzingTarget(true);
+      try {
+        const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+        const prompt = `You are a strict English teacher checking a student's reading accuracy.
+Target Sentence: "${targetText}"
+Student Read: "${spokenText}"
+
+Compare word by word. Identify:
+1. Words that were wrong or substituted.
+2. Words that were skipped/missing.
+3. Extra words that were added.
+4. Give one short tip per mistake.
+
+Return ONLY a raw JSON object:
+{
+  "spokenText": "${spokenText}",
+  "correct": true or false,
+  "mistakes": [
+    { "type": "wrong", "expected": "word", "spoken": "word", "tip": "short correction tip" },
+    { "type": "missing", "expected": "word", "spoken": null, "tip": "short correction tip" },
+    { "type": "extra", "expected": null, "spoken": "word", "tip": "short correction tip" }
+  ],
+  "overallTip": "One encouraging sentence with the most important correction."
+}
+If there are no mistakes, return an empty mistakes array and correct: true.
+Strictly JSON. No extra text.`;
+
+        const result = await model.generateContent(prompt);
+        let text = result.response.text();
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          setTargetAnalysis(JSON.parse(jsonMatch[0]));
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (e) {
+        console.error('Listen & Analyze Error:', e);
+        alert('AI analysis failed. Please try again.');
+      } finally {
+        setIsAnalyzingTarget(false);
+      }
+    };
+
+    recognition.onerror = (e) => {
+      console.error('Recognition error:', e);
+      setIsListeningForAnalysis(false);
+      alert('Could not hear you clearly. Please try again.');
+    };
+
+    recognition.onend = () => {
+      setIsListeningForAnalysis(false);
+    };
+
+    recognition.start();
   };
 
   const generateNewSentence = async () => {
@@ -208,7 +253,54 @@ Do not wrap in markdown. Just raw JSON.`;
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div style={{ background: 'rgba(255,255,255,0.02)', padding: '2rem', borderRadius: '24px', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
         <h5 style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Sentence</h5>
-        <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white', lineHeight: '1.4', marginBottom: '1.5rem' }}>"{targetText}"</p>
+        <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white', lineHeight: '1.4', marginBottom: '1rem' }}>"{targetText}"</p>
+        
+        {/* Voice selector */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}>Voice</span>
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            {GEMINI_VOICES.filter(v => ['Orus', 'Enceladus'].includes(v.id)).map(v => (
+              <button
+                key={v.id}
+                onClick={() => setSelectedVoice(v.id)}
+                title={v.desc}
+                style={{
+                  background: selectedVoice === v.id ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255,255,255,0.04)',
+                  border: selectedVoice === v.id ? '1px solid rgba(99,102,241,0.4)' : '1px solid var(--glass-border)',
+                  color: selectedVoice === v.id ? '#8b5cf6' : 'var(--text-secondary)',
+                  padding: '0.35rem 0.85rem', borderRadius: '100px', fontSize: '0.78rem', cursor: 'pointer',
+                  fontWeight: selectedVoice === v.id ? '700' : '500',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={async () => {
+              if (isTTSSpeaking) { stopSpeaking(); setIsTTSSpeaking(false); return; }
+              setIsTTSSpeaking(true);
+              await speak(targetText, 'en-US', {
+                voiceName: selectedVoice,
+                onStart: () => setIsTTSSpeaking(true),
+                onEnd: () => setIsTTSSpeaking(false),
+                onError: () => setIsTTSSpeaking(true),
+              });
+              setIsTTSSpeaking(false);
+            }}
+            style={{
+              background: isTTSSpeaking ? 'rgba(255, 51, 68, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+              border: isTTSSpeaking ? '1px solid rgba(255,51,68,0.3)' : '1px solid rgba(16,185,129,0.25)',
+              color: isTTSSpeaking ? 'var(--accent-red)' : '#10b981',
+              padding: '0.35rem 0.85rem', borderRadius: '100px', fontSize: '0.78rem', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600',
+              transition: 'all 0.2s'
+            }}
+          >
+            {isTTSSpeaking ? <><StopCircle size={13} /> Stop</> : <><Volume2 size={13} /> Listen</>}
+          </button>
+        </div>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button 
             onClick={generateNewSentence}
@@ -217,42 +309,108 @@ Do not wrap in markdown. Just raw JSON.`;
             <ArrowRightLeft size={14} /> New Sentence
           </button>
           <button 
-            onClick={analyzeTargetText}
+            onClick={listenAndAnalyze}
             disabled={isAnalyzingTarget}
-            style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', color: '#8b5cf6', padding: '0.5rem 1rem', borderRadius: '100px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            style={{
+              background: isListeningForAnalysis ? 'rgba(255, 51, 68, 0.15)' : 'rgba(99, 102, 241, 0.1)',
+              border: isListeningForAnalysis ? '1px solid rgba(255,51,68,0.4)' : '1px solid rgba(99, 102, 241, 0.2)',
+              color: isListeningForAnalysis ? 'var(--accent-red)' : '#8b5cf6',
+              padding: '0.5rem 1rem', borderRadius: '100px', fontSize: '0.8rem', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              transition: 'all 0.3s'
+            }}
           >
-            {isAnalyzingTarget ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
-            Analyze Sentence
+            {isAnalyzingTarget ? <Loader2 size={14} className="spin" /> : isListeningForAnalysis ? <StopCircle size={14} /> : <Mic size={14} />}
+            {isAnalyzingTarget ? 'Analyzing...' : isListeningForAnalysis ? 'Listening… tap to stop' : 'Analyze Sentence'}
           </button>
         </div>
 
+        {isListeningForAnalysis && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', color: 'var(--accent-red)', fontWeight: '700', fontSize: '0.9rem' }}
+          >
+            <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 0.8 }}>
+              <Mic size={18} />
+            </motion.div>
+            Listening… Read the sentence above aloud!
+          </motion.div>
+        )}
+
         {targetAnalysis && (
           <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            style={{ marginTop: '1.5rem', textAlign: 'left', padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ marginTop: '1.5rem', textAlign: 'left', padding: '1.5rem', background: 'rgba(0,0,0,0.25)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}
           >
-            <div style={{ fontSize: '0.85rem', color: '#8b5cf6', fontWeight: '700', marginBottom: '0.5rem' }}>Sentence Meaning</div>
-            <p style={{ fontSize: '0.95rem', color: 'white', marginBottom: '1rem' }}>{targetAnalysis.meaning}</p>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Grammar</div>
-                <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  {targetAnalysis.grammar.map((g, i) => <li key={i}>{g}</li>)}
-                </ul>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Vocabulary</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {targetAnalysis.vocabulary.map((v, i) => (
-                    <div key={i} style={{ fontSize: '0.85rem' }}>
-                      <span style={{ color: 'white', fontWeight: '600' }}>{v.word}:</span> <span style={{ color: 'var(--text-secondary)' }}>{v.meaning}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {/* What you said */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>You said</div>
+              <p style={{ fontSize: '0.95rem', color: 'white', fontStyle: 'italic', margin: 0 }}>"{targetAnalysis.spokenText}"</p>
             </div>
+
+            {/* Result badge */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              {targetAnalysis.correct ? (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', padding: '0.4rem 1rem', borderRadius: '100px', fontWeight: '700', fontSize: '0.85rem' }}>
+                  ✅ Perfect! No mistakes found.
+                </div>
+              ) : (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,51,68,0.1)', border: '1px solid rgba(255,51,68,0.25)', color: 'var(--accent-red)', padding: '0.4rem 1rem', borderRadius: '100px', fontWeight: '700', fontSize: '0.85rem' }}>
+                  <AlertCircle size={14} /> {targetAnalysis.mistakes?.length || 0} mistake{(targetAnalysis.mistakes?.length || 0) !== 1 ? 's' : ''} found
+                </div>
+              )}
+            </div>
+
+            {/* Mistakes list */}
+            {targetAnalysis.mistakes?.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--accent-red)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mistakes</div>
+                {targetAnalysis.mistakes.map((m, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
+                    background: m.type === 'missing' ? 'rgba(251,191,36,0.07)' : m.type === 'extra' ? 'rgba(99,102,241,0.07)' : 'rgba(255,51,68,0.07)',
+                    border: `1px solid ${m.type === 'missing' ? 'rgba(251,191,36,0.2)' : m.type === 'extra' ? 'rgba(99,102,241,0.2)' : 'rgba(255,51,68,0.2)'}`,
+                    borderRadius: '12px', padding: '0.85rem 1rem'
+                  }}>
+                    <div style={{
+                      fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px', flexShrink: 0,
+                      color: m.type === 'missing' ? '#fbbf24' : m.type === 'extra' ? '#818cf8' : 'var(--accent-red)'
+                    }}>
+                      {m.type === 'missing' ? '⚠ Missing' : m.type === 'extra' ? '➕ Extra' : '✗ Wrong'}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      {m.type === 'wrong' && (
+                        <div style={{ fontSize: '0.9rem', marginBottom: '0.25rem', color: 'white' }}>
+                          You said <span style={{ color: 'var(--accent-red)', fontWeight: '700' }}>"{m.spoken}"</span>
+                          {' → '}
+                          should be <span style={{ color: '#10b981', fontWeight: '700' }}>"{m.expected}"</span>
+                        </div>
+                      )}
+                      {m.type === 'missing' && (
+                        <div style={{ fontSize: '0.9rem', marginBottom: '0.25rem', color: 'white' }}>
+                          You skipped <span style={{ color: '#fbbf24', fontWeight: '700' }}>"{m.expected}"</span>
+                        </div>
+                      )}
+                      {m.type === 'extra' && (
+                        <div style={{ fontSize: '0.9rem', marginBottom: '0.25rem', color: 'white' }}>
+                          You added <span style={{ color: '#818cf8', fontWeight: '700' }}>"{m.spoken}"</span> — not in the original
+                        </div>
+                      )}
+                      {m.tip && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{m.tip}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Overall tip */}
+            {targetAnalysis.overallTip && (
+              <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '12px', padding: '0.85rem 1rem', fontSize: '0.9rem', color: '#a5b4fc', lineHeight: '1.5' }}>
+                💡 {targetAnalysis.overallTip}
+              </div>
+            )}
           </motion.div>
         )}
       </div>

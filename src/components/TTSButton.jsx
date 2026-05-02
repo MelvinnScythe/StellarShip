@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Volume2, VolumeX, Loader } from 'lucide-react';
 import { speak, stopSpeaking, isSpeakingNow } from '../utils/speech';
 
-const TTSButton = ({ text, language, size = 18, mood = 'friendly' }) => {
+const TTSButton = ({ text, language, size = 18, mood = 'friendly', voice }) => {
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'speaking'
   const isMounted = useRef(true);
 
@@ -26,6 +26,7 @@ const TTSButton = ({ text, language, size = 18, mood = 'friendly' }) => {
     if (isMounted.current) setStatus('loading');
 
     await speak(cleanText, language, {
+      voiceName: voice,
       onStart: () => { if (isMounted.current) setStatus('speaking'); },
       onEnd:   () => { if (isMounted.current) setStatus('idle'); },
       onError: () => { if (isMounted.current) setStatus('speaking'); }, // fallback running
