@@ -10,7 +10,7 @@ import TTSButton from './TTSButton';
 import { getAvailableVoices, setPreferredVoice } from '../utils/speech';
 
 // Initialize the Gemini API
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY_TEXT || import.meta.env.VITE_GEMINI_API_KEY);
 
 const AITutor = ({ userClass }) => {
   const [isOpen, setIsOpen] = useState(false);

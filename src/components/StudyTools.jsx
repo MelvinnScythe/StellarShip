@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const SpeakingTab = ({ userClass, genAI }) => {
+const SpeakingTab = ({ userClass }) => {
+  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY_SPEAKING || import.meta.env.VITE_GEMINI_API_KEY);
   const [targetText, setTargetText] = useState("The quick brown fox jumps over the lazy dog.");
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -466,7 +467,7 @@ Do not wrap in markdown. Just raw JSON.`;
 };
 
 const StudyTools = ({ userClass, initialTab = 'calculator', isFullscreen = false }) => {
-  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY_TEXT || import.meta.env.VITE_GEMINI_API_KEY);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [calcInput, setCalcInput] = useState('');
   const [unitValue, setUnitValue] = useState('');
@@ -701,7 +702,7 @@ const StudyTools = ({ userClass, initialTab = 'calculator', isFullscreen = false
           </button>
         </div>
 
-        {activeTab === 'speaking' && <SpeakingTab userClass={userClass} genAI={genAI} />}
+        {activeTab === 'speaking' && <SpeakingTab userClass={userClass} />}
 
         {activeTab === 'calculator' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
