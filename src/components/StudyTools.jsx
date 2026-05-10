@@ -98,7 +98,7 @@ const SpeakingTab = ({ userClass }) => {
     }
     setIsAnalyzing(true);
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const prompt = `Role: You are an advanced, patient Language Coach specializing in English and Hindi phonetics. Your goal is to help the user achieve native-like pronunciation through a repetitive "Challenge-Feedback-Adapt" loop.
 
 Task: Analyze the provided audio recording (and transcript: "${transcript}") of the user reading the Target Sentence.
@@ -115,7 +115,7 @@ Workflow:
 
 Return ONLY a raw JSON object with this exact structure:
 {
-  "score": number (0-100),
+  "score": 85,
   "feedback": "Encouraging summary",
   "mistakes": [
     {
