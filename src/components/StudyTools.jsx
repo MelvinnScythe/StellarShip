@@ -19,6 +19,7 @@ const SpeakingTab = ({ userClass }) => {
   const analysisRecognitionRef = React.useRef(null);
   const [selectedVoice, setSelectedVoice] = useState('Orus');
   const [isTTSSpeaking, setIsTTSSpeaking] = useState(false);
+  const [targetLanguage, setTargetLanguage] = useState('English');
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
@@ -46,7 +47,10 @@ const SpeakingTab = ({ userClass }) => {
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
-          setAudioData({ base64: reader.result.split(',')[1], mimeType });
+          const base64 = reader.result.split(',')[1];
+          const payload = { base64, mimeType };
+          setAudioData(payload);
+          analyzeSpeech(payload);
         };
       };
 
@@ -86,8 +90,9 @@ const SpeakingTab = ({ userClass }) => {
     setIsRecording(false);
   };
 
-  const analyzeSpeech = async () => {
-    if (!audioData && !transcript) {
+  const analyzeSpeech = async (audioPayload = null) => {
+    const audioToUse = audioPayload || audioData;
+    if (!audioToUse && !transcript) {
       console.warn("No audio or transcript to analyze");
       return;
     }
@@ -125,11 +130,11 @@ Return ONLY a raw JSON object with this exact structure:
 Strictly JSON. No extra text or markdown.`;
 
       const contents = [prompt];
-      if (audioData) {
+      if (audioToUse) {
         contents.push({
           inlineData: {
-            data: audioData.base64,
-            mimeType: audioData.mimeType
+            data: audioToUse.base64,
+            mimeType: audioToUse.mimeType
           }
         });
       }
@@ -195,7 +200,7 @@ Strictly JSON. No extra text or markdown.`;
     setIsAnalyzing(true);
     try {
       const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      const prompt = `Generate a single short sentence for a Class ${userClass} student to practice speaking and pronunciation. Keep it simple and age-appropriate. Just the text, no quotes.`;
+      const prompt = `Generate a single short sentence in ${targetLanguage} for a Class ${userClass} student to practice speaking and pronunciation. Keep it simple and age-appropriate. Just the text, no quotes. If Hindi, use Devanagari script.`;
       const result = await model.generateContent(prompt);
       setTargetText(result.response.text().trim());
       setTranscript('');
@@ -232,6 +237,11 @@ Strictly JSON. No extra text or markdown.`;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div style={{ background: 'rgba(255,255,255,0.02)', padding: '2rem', borderRadius: '24px', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+          <button onClick={() => setTargetLanguage('English')} style={{ background: targetLanguage === 'English' ? 'rgba(99,102,241,0.2)' : 'transparent', border: targetLanguage === 'English' ? '1px solid #8b5cf6' : '1px solid var(--glass-border)', color: targetLanguage === 'English' ? '#8b5cf6' : 'var(--text-secondary)', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s' }}>English</button>
+          <button onClick={() => setTargetLanguage('Hindi')} style={{ background: targetLanguage === 'Hindi' ? 'rgba(99,102,241,0.2)' : 'transparent', border: targetLanguage === 'Hindi' ? '1px solid #8b5cf6' : '1px solid var(--glass-border)', color: targetLanguage === 'Hindi' ? '#8b5cf6' : 'var(--text-secondary)', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s' }}>Hindi</button>
+        </div>
+        
         <h5 style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Sentence</h5>
         <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white', lineHeight: '1.4', marginBottom: '1rem' }}>"{targetText}"</p>
         
