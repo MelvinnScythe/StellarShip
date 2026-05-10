@@ -10,6 +10,7 @@ const SpeakingTab = ({ userClass }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [audioUrl, setAudioUrl] = useState(null);
+  const [audioData, setAudioData] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [targetAnalysis, setTargetAnalysis] = useState(null);
@@ -38,8 +39,15 @@ const SpeakingTab = ({ userClass }) => {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         setAudioUrl(URL.createObjectURL(audioBlob));
+
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          setAudioData({ base64: reader.result.split(',')[1], mimeType });
+        };
       };
 
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -65,6 +73,7 @@ const SpeakingTab = ({ userClass }) => {
       setIsRecording(true);
       setFeedback(null);
       setTranscript('');
+      setAudioData(null);
     } catch (err) {
       console.error("Mic error:", err);
       alert("Please allow microphone access to practice speaking.");
@@ -75,54 +84,65 @@ const SpeakingTab = ({ userClass }) => {
     if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
     if (recognitionRef.current) recognitionRef.current.stop();
     setIsRecording(false);
-    // Wait a tiny bit for the last result to process
-    setTimeout(() => {
-      analyzeSpeech();
-    }, 500);
   };
 
-  const analyzeSpeech = async (manualTranscript = null) => {
-    const textToAnalyze = manualTranscript || transcript;
-    if (!textToAnalyze) {
-      console.warn("No transcript to analyze");
+  const analyzeSpeech = async () => {
+    if (!audioData && !transcript) {
+      console.warn("No audio or transcript to analyze");
       return;
     }
     setIsAnalyzing(true);
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      const prompt = `You are an expert pronunciation coach.
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      const prompt = `Role: You are an advanced, patient Language Coach specializing in English and Hindi phonetics. Your goal is to help the user achieve native-like pronunciation through a repetitive "Challenge-Feedback-Adapt" loop.
+
+Task: Analyze the provided audio recording (and transcript: "${transcript}") of the user reading the Target Sentence.
+
 Target Sentence: "${targetText}"
-Student Spoke: "${textToAnalyze}"
 
-Task:
-1. Compare the student's speech with the target.
-2. Identify specific words they mispronounced or skipped.
-3. Give a pronunciation score out of 100.
-4. Provide a detailed phonetic breakdown for EACH word in the target sentence.
-5. Provide a "Rhythm and Flow" guide using slashes for pauses and bold for emphasis.
-6. Provide 2-3 specific "Delivery Tips" for sounds in this sentence.
+Workflow:
+1. Analysis: Analyze the audio for phonetic accuracy, matras (vowels), varnamala (consonants), word stress, and rhythm.
+2. Feedback: Compare what the user said to the target sentence. Point out specific errors.
+    - For Hindi: Use Devanagari script. Identify specific Matras (e.g., mistaken 'ि' for 'ी') or Vyanjan.
+    - For English: Use "Sounds-like" spelling (e.g., Thanks -> "th-anks") and IPA if helpful.
+    - Physical Tips: ALWAYS provide a "Mouth Position" tip (e.g., "Keep your tongue between your teeth for the 'th' sound").
+3. Adapt: Based on the errors, give a new task (drill for a letter, or harder sentence if perfect).
 
-Return ONLY a raw JSON object:
+Return ONLY a raw JSON object with this exact structure:
 {
-  "score": number,
-  "mistakes": ["word1", "word2"],
+  "score": number (0-100),
   "feedback": "Encouraging summary",
-  "phoneticBreakdown": [
-    {"word": "The", "phonetic": "thuh", "tip": "Soft 'th', don't over-emphasize."},
-    ...
+  "mistakes": [
+    {
+      "word": "word with error",
+      "error": "description of the error (e.g., missed aspirated 'th')",
+      "tip": "Mouth Position tip...",
+      "drill": "Specific drill for this sound..."
+    }
   ],
-  "fullPhonetic": "thuh kwik brown foks...",
-  "rhythmAndFlow": "The **quick** brown **fox** / jumps **o-ver** / the **lay-zy** dog.",
-  "deliveryTips": ["The 'V' in Over: ...", "The 'Z' in Lazy: ..."]
+  "newSentence": "A slightly harder or drill sentence based on the mistakes."
 }
-Do not wrap in markdown. Just raw JSON.`;
+Strictly JSON. No extra text or markdown.`;
 
-      const result = await model.generateContent(prompt);
+      const contents = [prompt];
+      if (audioData) {
+        contents.push({
+          inlineData: {
+            data: audioData.base64,
+            mimeType: audioData.mimeType
+          }
+        });
+      }
+
+      const result = await model.generateContent(contents);
       let text = result.response.text();
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         setFeedback(parsed);
+        if (parsed.newSentence) {
+          setTargetText(parsed.newSentence);
+        }
       } else {
         throw new Error("Invalid response format");
       }
@@ -432,82 +452,59 @@ Do not wrap in markdown. Just raw JSON.`;
             <p style={{ fontSize: '0.95rem', marginBottom: '2rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>{feedback.feedback}</p>
             
             {/* Mistakes Spotted */}
-            {feedback.mistakes?.length > 0 && (
-              <div style={{ marginBottom: '2rem' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-red)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mistakes Spotted</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {feedback.mistakes.map((m, i) => (
-                    <span key={i} style={{ background: 'rgba(255, 51, 68, 0.1)', color: 'var(--accent-red)', padding: '0.25rem 0.6rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600' }}>
-                      {m}
-                    </span>
-                  ))}
-                </div>
+            {feedback.mistakes?.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-red)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Feedback & Adapt</div>
+                {feedback.mistakes.map((m, i) => (
+                  <div key={i} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '1.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      <span style={{ background: 'rgba(255, 51, 68, 0.15)', color: 'var(--accent-red)', padding: '0.25rem 0.75rem', borderRadius: '100px', fontSize: '0.85rem', fontWeight: '700' }}>{m.word}</span>
+                      <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: '500' }}>{m.error}</span>
+                    </div>
+                    
+                    {m.tip && (
+                      <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.1)', marginBottom: '0.75rem' }}>
+                        <div style={{ color: '#10b981', fontWeight: '900', fontSize: '1.2rem' }}>👄</div>
+                        <div>
+                          <div style={{ color: '#10b981', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Mouth Position</div>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{m.tip}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {m.drill && (
+                      <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(99, 102, 241, 0.05)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.1)' }}>
+                        <div style={{ color: '#8b5cf6', fontWeight: '900', fontSize: '1.2rem' }}>🎯</div>
+                        <div>
+                          <div style={{ color: '#8b5cf6', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '0.25rem' }}>New Drill</div>
+                          <div style={{ fontSize: '0.9rem', color: 'white', lineHeight: '1.4', fontStyle: 'italic' }}>{m.drill}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.2)', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎉</div>
+                <div style={{ color: '#10b981', fontWeight: '700', fontSize: '1.1rem' }}>Perfect Pronunciation!</div>
+                <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>You nailed every word in the sentence.</p>
               </div>
             )}
             
-            {/* Phonetic Table */}
-            {feedback.phoneticBreakdown && (
-              <div style={{ marginBottom: '2rem', overflowX: 'auto' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-red)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phonetic Breakdown</div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                      <th style={{ textAlign: 'left', padding: '0.75rem', color: 'var(--text-secondary)' }}>Word</th>
-                      <th style={{ textAlign: 'left', padding: '0.75rem', color: 'var(--text-secondary)' }}>Sound</th>
-                      <th style={{ textAlign: 'left', padding: '0.75rem', color: 'var(--text-secondary)' }}>Tip</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {feedback.phoneticBreakdown.map((item, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '0.75rem', fontWeight: '700', color: 'white' }}>{item.word}</td>
-                        <td style={{ padding: '0.75rem', color: 'var(--accent-red)', fontFamily: 'monospace' }}>{item.phonetic}</td>
-                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{item.tip}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', textAlign: 'center', fontStyle: 'italic', color: 'var(--text-secondary)' }}>
-                  "{feedback.fullPhonetic}"
-                </div>
-              </div>
-            )}
-
-            {/* Rhythm and Flow */}
-            {feedback.rhythmAndFlow && (
-              <div style={{ marginBottom: '2rem' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-red)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rhythm and Flow</div>
-                <div style={{ 
-                  background: 'rgba(0,0,0,0.2)', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--glass-border)',
-                  fontSize: '1.1rem', lineHeight: '1.6', color: 'white', textAlign: 'center'
-                }}>
-                  {feedback.rhythmAndFlow.split(' ').map((part, i) => {
-                    const isBold = part.startsWith('**') && part.endsWith('**');
-                    const text = isBold ? part.slice(2, -2) : part;
-                    return (
-                      <span key={i} style={{ fontWeight: isBold ? '900' : '400', color: isBold ? 'var(--accent-red)' : 'white' }}>
-                        {text}{' '}
-                      </span>
-                    );
-                  })}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem', textAlign: 'center' }}>
-                  English sentences "bounce" between important words. Emphasize the red words.
-                </div>
-              </div>
-            )}
-
-            {/* Delivery Tips */}
-            {feedback.deliveryTips && (
+            {/* New Challenge Sentence */}
+            {feedback.newSentence && (
               <div>
-                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#10b981', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Delivery Tips</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {feedback.deliveryTips.map((tip, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '0.75rem', background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
-                      <div style={{ color: '#10b981', fontWeight: '900' }}>•</div>
-                      <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>{tip}</div>
-                    </div>
-                  ))}
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#10b981', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Up Next: New Challenge</div>
+                <div style={{ 
+                  background: 'rgba(0,0,0,0.3)', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--glass-border)',
+                  fontSize: '1.1rem', lineHeight: '1.6', color: 'white', textAlign: 'center', fontStyle: 'italic',
+                  boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.2)'
+                }}>
+                  "{feedback.newSentence}"
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.75rem', textAlign: 'center' }}>
+                  This sentence has been updated as your new Target Sentence above!
                 </div>
               </div>
             )}
