@@ -50,7 +50,6 @@ const SpeakingTab = ({ userClass }) => {
           const base64 = reader.result.split(',')[1];
           const payload = { base64, mimeType };
           setAudioData(payload);
-          analyzeSpeech(payload);
         };
       };
 
