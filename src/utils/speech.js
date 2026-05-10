@@ -35,6 +35,9 @@ export const GEMINI_VOICES = [
 // Currently playing Audio instance (allows stopping mid-playback)
 let currentAudio = null;
 
+// Cache for generated audio blob URLs to prevent re-fetching the same sentence/voice
+const audioCache = new Map();
+
 /** Stop any currently playing TTS audio. */
 export const stopSpeaking = () => {
   if (currentAudio) {
@@ -119,7 +122,27 @@ export const speak = async (text, language = 'en-US', options = {}) => {
     return;
   }
 
-  if (onStart) onStart();
+  const cacheKey = `${voiceName}|${cleanText}`;
+
+  if (audioCache.has(cacheKey)) {
+    if (onStart) onStart();
+    const url = audioCache.get(cacheKey);
+    const audio = new Audio(url);
+    currentAudio = audio;
+    await new Promise((resolve, reject) => {
+      audio.onended = () => {
+        currentAudio = null;
+        if (onEnd) onEnd();
+        resolve();
+      };
+      audio.onerror = () => {
+        currentAudio = null;
+        reject(new Error('Audio playback error'));
+      };
+      audio.play().catch(reject);
+    });
+    return;
+  }
 
   try {
     const response = await fetch(`${GEMINI_TTS_URL}?key=${GEMINI_TTS_API_KEY}`, {
@@ -156,21 +179,22 @@ export const speak = async (text, language = 'en-US', options = {}) => {
 
     const wavBlob = pcmToWavBlob(audioPart.inlineData.data, sampleRate);
     const url = URL.createObjectURL(wavBlob);
+    audioCache.set(cacheKey, url);
+    
     const audio = new Audio(url);
     currentAudio = audio;
 
     await new Promise((resolve, reject) => {
       audio.onended = () => {
-        URL.revokeObjectURL(url);
         currentAudio = null;
         if (onEnd) onEnd();
         resolve();
       };
       audio.onerror = () => {
-        URL.revokeObjectURL(url);
         currentAudio = null;
         reject(new Error('Audio playback error'));
       };
+      if (onStart) onStart(); // Signal UI that speaking is starting *now*
       audio.play().catch(reject);
     });
 
