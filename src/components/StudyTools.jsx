@@ -97,18 +97,18 @@ const SpeakingTab = ({ userClass }) => {
     }
     setIsAnalyzing(true);
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
       const prompt = `Role: You are an advanced, patient Language Coach specializing in English and Hindi phonetics. Your goal is to help the user achieve native-like pronunciation through a repetitive "Challenge-Feedback-Adapt" loop.
 
-Task: Analyze the provided audio recording (and transcript: "${transcript}") of the user reading the Target Sentence.
+Task: Analyze the provided audio recording of the user reading the Target Sentence. DO NOT rely on any text transcript, you must listen to the exact phonetic sounds they make.
 
 Target Sentence: "${targetText}"
 
 Workflow:
 1. Analysis: Analyze the audio for phonetic accuracy, matras (vowels), varnamala (consonants), word stress, and rhythm.
-2. Feedback: Compare what the user said to the target sentence. Point out specific errors.
+2. Feedback: Compare the exact sounds the user made to the target sentence. Point out specific errors.
     - For Hindi: Use Devanagari script. Identify specific Matras (e.g., mistaken 'ि' for 'ी') or Vyanjan.
-    - For English: Use "Sounds-like" spelling (e.g., Thanks -> "th-anks") and IPA if helpful.
+    - For English: Use "Sounds-like" spelling. E.g., "You said it wrong, it's pronounced 'foks' not 'fawks'".
     - Physical Tips: ALWAYS provide a "Mouth Position" tip (e.g., "Keep your tongue between your teeth for the 'th' sound").
 3. Adapt: Based on the errors, give a new task (drill for a letter, or harder sentence if perfect).
 
@@ -119,7 +119,7 @@ Return ONLY a raw JSON object with this exact structure:
   "mistakes": [
     {
       "word": "word with error",
-      "error": "description of the error (e.g., missed aspirated 'th')",
+      "error": "You said it wrong, it's pronounced 'X' not 'Y'. (Explain the exact sound difference)",
       "tip": "Mouth Position tip...",
       "drill": "Specific drill for this sound..."
     }
