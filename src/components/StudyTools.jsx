@@ -20,6 +20,12 @@ const SpeakingTab = ({ userClass }) => {
   const [selectedVoice, setSelectedVoice] = useState('Orus');
   const [isTTSSpeaking, setIsTTSSpeaking] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState('English');
+  const [coachMode, setCoachMode] = useState('regular');
+  
+  const [drillSession, setDrillSession] = useState(null);
+  const [currentDrillIndex, setCurrentDrillIndex] = useState(0);
+  const [drillFeedback, setDrillFeedback] = useState(null);
+  const [isAnalyzingDrill, setIsAnalyzingDrill] = useState(false);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
@@ -91,70 +97,108 @@ const SpeakingTab = ({ userClass }) => {
 
   const analyzeSpeech = async (audioPayload = null) => {
     const audioToUse = audioPayload || audioData;
-    if (!audioToUse && !transcript) {
-      console.warn("No audio or transcript to analyze");
+    if (!audioToUse) {
+      alert('No recording found. Please record yourself first, then click Analyze.');
       return;
     }
     setIsAnalyzing(true);
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-      const prompt = `Role: You are an advanced, patient Language Coach specializing in English and Hindi phonetics. Your goal is to help the user achieve native-like pronunciation through a repetitive "Challenge-Feedback-Adapt" loop.
+      // Convert base64 back to Blob
+      const byteChars = atob(audioToUse.base64);
+      const byteNums = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+      const audioBlob = new Blob([byteNums], { type: 'audio/webm' });
 
-Task: Analyze the provided audio recording of the user reading the Target Sentence. DO NOT rely on any text transcript, you must listen to the exact phonetic sounds they make.
+      // POST to our backend — which handles the Gemini Files API upload
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('targetText', targetText);
+      formData.append('mode', coachMode);
 
-Target Sentence: "${targetText}"
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/analyze-speech`, {
+        method: 'POST',
+        body: formData,
+      });
 
-Workflow:
-1. Analysis: Analyze the audio for phonetic accuracy, matras (vowels), varnamala (consonants), word stress, and rhythm.
-2. Feedback: Compare the exact sounds the user made to the target sentence. Point out specific errors.
-    - For Hindi: Use Devanagari script. Identify specific Matras (e.g., mistaken 'ि' for 'ी') or Vyanjan.
-    - For English: Use "Sounds-like" spelling. E.g., "You said it wrong, it's pronounced 'foks' not 'fawks'".
-    - Physical Tips: ALWAYS provide a "Mouth Position" tip (e.g., "Keep your tongue between your teeth for the 'th' sound").
-3. Adapt: Based on the errors, give a new task (drill for a letter, or harder sentence if perfect).
-
-Return ONLY a raw JSON object with this exact structure:
-{
-  "score": 85,
-  "feedback": "Encouraging summary",
-  "mistakes": [
-    {
-      "word": "word with error",
-      "error": "You said it wrong, it's pronounced 'X' not 'Y'. (Explain the exact sound difference)",
-      "tip": "Mouth Position tip...",
-      "drill": "Specific drill for this sound..."
-    }
-  ],
-  "newSentence": "A slightly harder or drill sentence based on the mistakes."
-}
-Strictly JSON. No extra text or markdown.`;
-
-      const contents = [prompt];
-      if (audioToUse) {
-        contents.push({
-          inlineData: {
-            data: audioToUse.base64,
-            mimeType: audioToUse.mimeType
-          }
-        });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Server error: ${response.status}`);
       }
 
-      const result = await model.generateContent(contents);
-      let text = result.response.text();
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        setFeedback(parsed);
-        if (parsed.newSentence) {
-          setTargetText(parsed.newSentence);
-        }
-      } else {
-        throw new Error("Invalid response format");
+      const feedback = await response.json();
+      setFeedback(feedback);
+      if (feedback.newSentence) {
+        setTargetText(feedback.newSentence);
       }
     } catch (e) {
-      console.error("Speech Analysis Error:", e);
-      alert("AI Coach failed to analyze speech. Please try again.");
+      console.error('Speech Analysis Error:', e);
+      alert(`Analysis failed: ${e.message}`);
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const startDrillSession = (mistakes) => {
+    if (!mistakes || mistakes.length === 0) return;
+    const drills = mistakes.filter(m => m.drill).map(m => m.drill);
+    if (drills.length > 0) {
+      setDrillSession(drills);
+      setCurrentDrillIndex(0);
+      setDrillFeedback(null);
+      setAudioUrl(null);
+      setAudioData(null);
+      setTranscript('');
+    }
+  };
+
+  const analyzeDrill = async () => {
+    if (!audioData) {
+      alert('Please record your drill attempt first.');
+      return;
+    }
+    setIsAnalyzingDrill(true);
+    try {
+      const byteChars = atob(audioData.base64);
+      const byteNums = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+      const audioBlob = new Blob([byteNums], { type: 'audio/webm' });
+
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('drillText', drillSession[currentDrillIndex]);
+
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/analyze-speech/drill`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Server error');
+      }
+
+      const result = await response.json();
+      setDrillFeedback(result);
+
+      if (result.passed) {
+        setTimeout(() => {
+          if (currentDrillIndex + 1 < drillSession.length) {
+            setCurrentDrillIndex(prev => prev + 1);
+            setDrillFeedback(null);
+            setAudioUrl(null);
+            setAudioData(null);
+          } else {
+            alert('🎉 You completed all drills successfully!');
+            setDrillSession(null);
+          }
+        }, 3000);
+      }
+    } catch (e) {
+      console.error('Drill Analysis Error:', e);
+      alert('Failed to analyze drill.');
+    } finally {
+      setIsAnalyzingDrill(false);
     }
   };
 
@@ -235,10 +279,80 @@ Strictly JSON. No extra text or markdown.`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      {drillSession ? (
+        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '2rem', borderRadius: '24px', border: '1px solid var(--glass-border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h5 style={{ color: '#8b5cf6', margin: 0 }}>Drill Session ({currentDrillIndex + 1} / {drillSession.length})</h5>
+            <button onClick={() => setDrillSession(null)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
+          </div>
+          
+          <h5 style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Target Drill</h5>
+          <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white', lineHeight: '1.4', marginBottom: '2rem', textAlign: 'center' }}>"{drillSession[currentDrillIndex]}"</p>
+
+          {drillFeedback && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ marginBottom: '2rem', padding: '1.5rem', borderRadius: '16px', background: drillFeedback.passed ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 51, 68, 0.1)', border: drillFeedback.passed ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 51, 68, 0.3)' }}>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: drillFeedback.passed ? '#10b981' : 'var(--accent-red)', marginBottom: '0.5rem', textAlign: 'center' }}>
+                {drillFeedback.passed ? '✅ Passed!' : '❌ Needs Work'} (Score: {drillFeedback.score}%)
+              </div>
+              <div style={{ fontStyle: 'italic', color: 'var(--text-secondary)', marginBottom: '1rem', textAlign: 'center' }}>Heard: "{drillFeedback.heardTranscript}"</div>
+              <p style={{ color: 'white', marginBottom: drillFeedback.tip ? '1rem' : 0, textAlign: 'center' }}>{drillFeedback.feedback}</p>
+              {!drillFeedback.passed && drillFeedback.tip && (
+                <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '12px' }}>
+                  <div style={{ color: '#10b981', fontSize: '1.2rem' }}>👄</div>
+                  <div style={{ textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{drillFeedback.tip}</div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={isRecording ? stopRecording : startRecording}
+                style={{
+                  width: '80px', height: '80px', borderRadius: '50%', border: 'none', cursor: 'pointer',
+                  background: isRecording ? 'rgba(255, 51, 68, 0.2)' : 'var(--accent-red)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: isRecording ? '0 0 30px rgba(255, 51, 68, 0.3)' : '0 10px 25px rgba(255, 51, 68, 0.4)',
+                  color: 'white', position: 'relative'
+                }}
+              >
+                {isRecording ? <StopCircle size={32} /> : <Mic size={32} />}
+              </motion.button>
+
+              {!isRecording && audioUrl && !isAnalyzingDrill && (!drillFeedback || !drillFeedback.passed) && (
+                <motion.button
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  onClick={() => analyzeDrill()}
+                  style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '1rem 2rem', borderRadius: '100px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+                >
+                  <Sparkles size={20} /> Analyze Drill
+                </motion.button>
+              )}
+            </div>
+
+            <p style={{ fontWeight: '600', color: isRecording ? 'var(--accent-red)' : 'var(--text-secondary)' }}>
+              {isRecording ? 'Listening...' : (audioUrl ? 'Recording ready. Click Analyze Drill.' : 'Record your attempt.')}
+            </p>
+
+            {isAnalyzingDrill && <div style={{ color: '#8b5cf6', fontWeight: 'bold' }}>Analyzing drill...</div>}
+          </div>
+        </div>
+      ) : (
+      <>
       <div style={{ background: 'rgba(255,255,255,0.02)', padding: '2rem', borderRadius: '24px', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
           <button onClick={() => setTargetLanguage('English')} style={{ background: targetLanguage === 'English' ? 'rgba(99,102,241,0.2)' : 'transparent', border: targetLanguage === 'English' ? '1px solid #8b5cf6' : '1px solid var(--glass-border)', color: targetLanguage === 'English' ? '#8b5cf6' : 'var(--text-secondary)', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s' }}>English</button>
           <button onClick={() => setTargetLanguage('Hindi')} style={{ background: targetLanguage === 'Hindi' ? 'rgba(99,102,241,0.2)' : 'transparent', border: targetLanguage === 'Hindi' ? '1px solid #8b5cf6' : '1px solid var(--glass-border)', color: targetLanguage === 'Hindi' ? '#8b5cf6' : 'var(--text-secondary)', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s' }}>Hindi</button>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700', alignSelf: 'center', marginRight: '0.5rem' }}>Coach Mode:</span>
+          <button onClick={() => setCoachMode('regular')} style={{ background: coachMode === 'regular' ? 'rgba(16, 185, 129, 0.2)' : 'transparent', border: coachMode === 'regular' ? '1px solid #10b981' : '1px solid var(--glass-border)', color: coachMode === 'regular' ? '#10b981' : 'var(--text-secondary)', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s' }}>Regular</button>
+          <button onClick={() => setCoachMode('harsh')} style={{ background: coachMode === 'harsh' ? 'rgba(255, 51, 68, 0.2)' : 'transparent', border: coachMode === 'harsh' ? '1px solid var(--accent-red)' : '1px solid var(--glass-border)', color: coachMode === 'harsh' ? 'var(--accent-red)' : 'var(--text-secondary)', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s' }}>Harsh (Strict)</button>
         </div>
         
         <h5 style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Sentence</h5>
@@ -362,7 +476,7 @@ Strictly JSON. No extra text or markdown.`;
             )}
           </motion.button>
 
-          {!isRecording && transcript && !feedback && !isAnalyzing && (
+          {!isRecording && audioUrl && !feedback && !isAnalyzing && (
             <motion.button
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -380,7 +494,7 @@ Strictly JSON. No extra text or markdown.`;
         </div>
 
         <p style={{ fontWeight: '600', color: isRecording ? 'var(--accent-red)' : 'var(--text-secondary)' }}>
-          {isRecording ? "Listening... Speak now!" : (transcript ? "Recording captured! Click Analyze below." : "Tap to record your pronunciation")}
+          {isRecording ? 'Listening... Speak now!' : (audioUrl ? 'Recording ready! Click Analyze My Speech.' : 'Tap the mic to record your pronunciation')}
         </p>
 
         {isAnalyzing && (
@@ -458,6 +572,13 @@ Strictly JSON. No extra text or markdown.`;
               </div>
             </div>
             
+            {feedback.heardTranscript && (
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem', fontWeight: '700' }}>What AI Heard:</div>
+                <div style={{ color: 'white', fontStyle: 'italic', fontSize: '1rem' }}>"{feedback.heardTranscript}"</div>
+              </div>
+            )}
+            
             <p style={{ fontSize: '0.95rem', marginBottom: '2rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>{feedback.feedback}</p>
             
             {/* Mistakes Spotted */}
@@ -501,6 +622,15 @@ Strictly JSON. No extra text or markdown.`;
               </div>
             )}
             
+            {feedback.mistakes?.length > 0 && feedback.mistakes.some(m => m.drill) && (
+              <button 
+                onClick={() => startDrillSession(feedback.mistakes)}
+                style={{ width: '100%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', padding: '1rem', borderRadius: '16px', border: 'none', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', marginBottom: '2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+              >
+                <Sparkles size={20} /> Start Follow-up Drills
+              </button>
+            )}
+            
             {/* New Challenge Sentence */}
             {feedback.newSentence && (
               <div>
@@ -520,6 +650,8 @@ Strictly JSON. No extra text or markdown.`;
           </motion.div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 };
