@@ -11,6 +11,11 @@ import Auth from './components/Auth';
 import { getLessonContent } from './curriculumData';
 import AITutor from './components/AITutor';
 import StudyTools from './components/StudyTools';
+import Messages from './components/Messages';
+import Friends from './components/Friends';
+import { useUnreadMessages } from './hooks/useUnreadMessages';
+import { useFriendRequests } from './hooks/useFriendRequests';
+import SiteAlertBar from './components/SiteAlertBar';
 
 function App() {
   const navigate = useNavigate();
@@ -1531,11 +1536,2051 @@ function App() {
                 "xp": 10
         }
 ],
-};
+      6: [
+        {
+                "subject": "Mathematics",
+                "title": "Knowing Our Numbers",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Whole Numbers",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Playing With Numbers",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Basic Geometrical Ideas",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Understanding Elementary Shapes",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Integers",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Fractions",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Decimals",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Data Handling",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Mensuration",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Algebra",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Ratio and Proportion",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Components of Food",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Sorting Materials into Groups",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Separation of Substances",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Getting to Know Plants",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Body Movements",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "The Living Organisms and Their Surroundings",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Motion and Measurement of Distances",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Light Shadows and Reflections",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Electricity and Circuits",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Fun with Magnets",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Air Around Us",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "What Where How and When?",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "From Hunting-Gathering to Growing Food",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "In the Earliest Cities",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "What Books and Burials Tell Us",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Kingdoms Kings and an Early Republic",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "New Questions and Ideas",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "From a Kingdom to an Empire",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Villages Towns and Trade",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "New Empires and Kingdoms",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Buildings Paintings and Books",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "The Earth in the Solar System",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Globe: Latitudes and Longitudes",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Motions of the Earth",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Maps",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Major Domains of the Earth",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Our Country - India",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Understanding Diversity",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Diversity and Discrimination",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "What is Government?",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Panchayati Raj",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Rural Administration",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Urban Administration",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Rural Livelihoods",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Urban Livelihoods",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Who Did Patrick's Homework?",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "How the Dog Found Himself a New Master!",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Taro's Reward",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "An Indian - American Woman in Space: Kalpana Chawla",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Different Kind of School",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Who I Am",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Fair Play",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Game of Chance",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Desert Animals",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Banyan Tree",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Tale of Two Birds",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Friendly Mongoose",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Shepherd's Treasure",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Old-Clock Shop",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Tansen",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Monkey and the Crocodile",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Wonder Called Sleep",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Pact with the Sun",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "What Happened to the Reptiles",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Strange Wrestling Match",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "वह चिड़िया जो",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "बचपन",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "नादान दोस्त",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "चाँद से थोड़ी-सी गप्पें",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "अक्षरों का महत्व",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "पार नज़र के",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "साथी हाथ बढ़ाना",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "ऐसे-ऐसे",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "टिकट अलबम",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "झाँसी की रानी",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "जो देखकर भी नहीं देखते",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "संसार पुस्तक है",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "मैं सबसे छोटी होऊँ",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "लोकगीत",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "नौकर",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "वन के मार्ग में",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "साँस-साँस में बाँस",
+                "xp": 15
+        }
+],
+      7: [
+        {
+                "subject": "Mathematics",
+                "title": "Integers",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Fractions and Decimals",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Data Handling",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Simple Equations",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Lines and Angles",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "The Triangle and its Properties",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Congruence of Triangles",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Comparing Quantities",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Rational Numbers",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Practical Geometry",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Perimeter and Area",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Algebraic Expressions",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Exponents and Powers",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Symmetry",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Visualising Solid Shapes",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Nutrition in Plants",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Nutrition in Animals",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Heat",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Acids Bases and Salts",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Physical and Chemical Changes",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Respiration in Organisms",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Transportation in Animals and Plants",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Reproduction in Plants",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Motion and Time",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Electric Current and its Effects",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Light",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Forests: Our Lifeline",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Wastewater Story",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Introduction: Tracing Changes Through a Thousand Years",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "New Kings and Kingdoms",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Delhi: 12th to 15th Century",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "The Mughals (16th to 17th Century)",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Rulers and Buildings",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Towns Traders and Craftspersons",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Tribes Nomads and Settled Communities",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Devotional Paths to the Divine",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "The Making of Regional Cultures",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "18th-Century Political Formations",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Environment",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Inside Our Earth",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Our Changing Earth",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Air",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Water",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Natural Vegetation and Wildlife",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Human Environment - Settlement Transport and Communication",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Human Environment Interactions - The Tropical and Subtropical R...",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Life in the Deserts",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "On Equality",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Role of the Government in Health",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "How the State Government Works",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Growing up as Boys and Girls",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Women Change the World",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Understanding Media",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Markets Around Us",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "A Shirt in the Market",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Struggles for Equality",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Three Questions",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Gift of Chappals",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Gopal and the Hilsa Fish",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Ashes That Made Trees Bloom",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Quality",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Expert Detectives",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Invention of Vita-Wonk",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Fire: Friend and Foe",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Bicycle in Good Repair",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Story of Cricket",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Tiny Teacher",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Bringing up Kari",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Desert",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Cop and the Anthem",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Golu Grows a Nose",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "I Want Something in a Cage",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Chandni",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Bear Story",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Tiger in the House",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "An Alien Hand",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "हम पंछी उन्मुक्त गगन के",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "दादी माँ",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "हिमालय की बेटियां",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "कठपुतली",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "मिठाईवाला",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "रक्त और हमारा शरीर",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "पापा खो गए",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "शाम-एक किसान",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "चिड़िया की बच्ची",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "अपूर्व अनुभव",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "रहीम की दोहे",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "कंचा",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "एक तिनका",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "खानपान की बदलती तस्वीर",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "नीलकंठ",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "भोर और बरखा",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "वीर कुंवर सिंह",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "संघर्ष के कारण मैं तुनुकमिज़ाज हो गया: धनराज",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "आश्रम का अनुमानित व्यय",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "विप्लव गायन",
+                "xp": 15
+        }
+],
+      8: [
+        {
+                "subject": "Mathematics",
+                "title": "Rational Numbers",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Linear Equations in One Variable",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Understanding Quadrilaterals",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Practical Geometry",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Data Handling",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Squares and Square Roots",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Cubes and Cube Roots",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Comparing Quantities",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Algebraic Expressions and Identities",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Visualising Solid Shapes",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Mensuration",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Exponents and Powers",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Direct and Inverse Proportions",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Factorisation",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Introduction to Graphs",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Playing with Numbers",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Crop Production and Management",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Microorganisms: Friend and Foe",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Synthetic Fibres and Plastics",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Materials: Metals and Non-Metals",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Coal and Petroleum",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Combustion and Flame",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Conservation of Plants and Animals",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Cell — Structure and Functions",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Reproduction in Animals",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Reaching the Age of Adolescence",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Force and Pressure",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Friction",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Sound",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Chemical Effects of Electric Current",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Some Natural Phenomena",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Light",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Stars and the Solar System",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Pollution of Air and Water",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "How When and Where",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "From Trade to Territory",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Ruling the Countryside",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Tribals Dikus and the Vision of a Golden Age",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "When People Rebel",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Colonialism and the City",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Weavers Iron Smelters and Factory Owners",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Civilising the Native Educating the Nation",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Women Caste and Reform",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "The Changing World of Visual Arts",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "The Making of the National Movement: 1870s-1947",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "India After Independence",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Resources",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Land Soil Water Natural Vegetation and Wildlife Resources",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Mineral and Power Resources",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Agriculture",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Industries",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Human Resources",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "The Indian Constitution",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Understanding Secularism",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Why do we need a Parliament?",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Understanding Laws",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Judiciary",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Understanding Our Criminal Justice System",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Understanding Marginalisation",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Confronting Marginalisation",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Public Facilities",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Law and Social Justice",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Best Christmas Present in the World",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Tsunami",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Glimpses of the Past",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Bepin Choudhury's Lapse of Memory",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Summit Within",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "This is Jody's Fawn",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Visit to Cambridge",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Short Monsoon Diary",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Great Stone Face - I",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Great Stone Face - II",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "How the Camel got his hump",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Children at work",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Selfish Giant",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The treasure within",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Princess September",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The fight",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The open window",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Jalebis",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The comet - I",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The comet - II",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "ध्वनि",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "लाख की चूड़ियाँ",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "बस की यात्रा",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "दीवानों की हस्ती",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "चिट्ठियों की अनूठी दुनिया",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "भगवान के डाकिए",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "क्या निराश हुआ जाए",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "यह सबसे कठिन समय नहीं",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "कबीर की साखियाँ",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "कामचोर",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "जब सिनेमा ने बोलना सीखा",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "सुदामा चरित",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "जहाँ पहिया है",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "अकबरी लोटा",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "सूर के पद",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "पानी की कहानी",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "बाज और साँप",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "टोपी",
+                "xp": 15
+        }
+],
+      9: [
+        {
+                "subject": "Mathematics",
+                "title": "Number Systems",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Polynomials",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Coordinate Geometry",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Linear Equations in Two Variables",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Introduction to Euclid's Geometry",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Lines and Angles",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Triangles",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Quadrilaterals",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Areas of Parallelograms and Triangles",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Circles",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Constructions",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Heron's Formula",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Surface Areas and Volumes",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Statistics",
+                "xp": 15
+        },
+        {
+                "subject": "Mathematics",
+                "title": "Probability",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Matter in Our Surroundings",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Is Matter Around Us Pure",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Atoms and Molecules",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Structure of the Atom",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "The Fundamental Unit of Life",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Tissues",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Diversity in Living Organisms",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Motion",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Force and Laws of Motion",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Gravitation",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Work and Energy",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Sound",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Why Do We Fall Ill",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Natural Resources",
+                "xp": 15
+        },
+        {
+                "subject": "Science",
+                "title": "Improvement in Food Resources",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "The French Revolution",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Socialism in Europe and the Russian Revolution",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Nazism and the Rise of Hitler",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Forest Society and Colonialism",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Pastoralists in the Modern World",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "India - Size and Location",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Physical Features of India",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Drainage",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Climate",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Natural Vegetation and Wild Life",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Population",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "What is Democracy? Why Democracy?",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Constitutional Design",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Electoral Politics",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Working of Institutions",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Democratic Rights",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "The Story of Village Palampur",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "People as Resource",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Poverty as a Challenge",
+                "xp": 15
+        },
+        {
+                "subject": "Social Studies",
+                "title": "Food Security in India",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Fun They Had",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Sound of Music",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Little Girl",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Truly Beautiful Mind",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Snake and the Mirror",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "My Childhood",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Packing",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Reach for the Top",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Bond of Love",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Kathmandu",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "If I Were You",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Lost Child",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Adventures of Toto",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Iswaran the Storyteller",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "In the Kingdom of Fools",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Happy Prince",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Weathering the Storm in Ersama",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Last Leaf",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A House Is Not a Home",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Accidental Tourist",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Beggar",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "दो बैलों की कथा",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "ल्हासा की ओर",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "उपभोक्तावाद की संस्कृति",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "साँवले सपनों की याद",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "प्रेमचंद के फटे जूते",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "मेरे बचपन के दिन",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "एक कुत्ता और एक मैना",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "साखियाँ एवं सबद",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "वाख",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "सवैया",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "कैदी और कोकिला",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "ग्राम श्री",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "चंद्र गहना से लौटती बेर",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "मेघ आए",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "यमराज की दिशा",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "बच्चे काम पर जा रहे हैं",
+                "xp": 15
+        }
+],
+      10: [
+        {
+                "subject": "English",
+                "title": "A Letter to God",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Nelson Mandela: Long Walk to Freedom",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Two Stories about Flying",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "From the Diary of Anne Frank",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Hundred Dresses - I",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Hundred Dresses - II",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Glimpses of India",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Mijbil the Otter",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Madam Rides the Bus",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Sermon at Benares",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Proposal",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Triumph of Surgery",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Thief's Story",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Midnight Visitor",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "A Question of Trust",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Footprints without Feet",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Making of a Scientist",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Necklace",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Hack Driver",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "Bholi",
+                "xp": 15
+        },
+        {
+                "subject": "English",
+                "title": "The Book That Saved the Earth",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "पद (सूरदास)",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "राम-लक्ष्मण-परशुराम संवाद",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "सवैया और कवित्त",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "आत्मकथ्य",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "उत्साह और अट नहीं रही है",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "यह दंतुरित मुसकान और फसल",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "छाया मत छूना",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "कन्यादान",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "संगतकार",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "नेताजी का चश्मा",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "बालगोबिन भगत",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "लखनवी अंदाज़",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "मानवीय करुणा की दिव्या चमक",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "एक कहानी यह भी",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "स्त्री शिक्षा के विरोधी कुतर्कों का खंडन",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "नौबतखाने में इबादत",
+                "xp": 15
+        },
+        {
+                "subject": "Hindi",
+                "title": "संस्कृति",
+                "xp": 15
+        }
+]
+    };;;
     const classData = ncertData[classNum] || ncertData[1];
-    return classData.flatMap((chapter, index) => {
+    return classData.flatMap((chapter) => {
       return [1, 2, 3, 4, 5, 6].map(lessonNum => {
-        const lessonInfo = getLessonContent(chapter.title, chapter.subject, lessonNum);
+        const lessonInfo = getLessonContent(chapter.title, chapter.subject, lessonNum, false, classNum);
         let subtopicTitle = `Lesson ${lessonNum}`;
         if (lessonInfo.lessons && lessonInfo.lessons[lessonNum - 1]) {
           subtopicTitle = lessonInfo.lessons[lessonNum - 1].title;
@@ -1544,11 +3589,18 @@ function App() {
         } else if (lessonInfo.title) {
           subtopicTitle = lessonInfo.title;
         }
+        
+        // Final fallback if undefined
+        if (!subtopicTitle || subtopicTitle.includes("undefined")) {
+           const defaultTopics = ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"];
+           subtopicTitle = defaultTopics[lessonNum - 1] || `Lesson ${lessonNum}`;
+        }
         return {
           id: `${chapter.subject}-${chapter.title}-${lessonNum}`.replace(/\s+/g, '-'),
           title: `${prefix} Class ${classNum} ${chapter.subject} - ${chapter.title}: ${subtopicTitle}`,
           chapterTitle: chapter.title,
           subject: chapter.subject,
+          classNum: classNum,
           completed: false,
           xp: Math.round(chapter.xp / 6),
           lessonNum: lessonNum,
@@ -1601,13 +3653,54 @@ function App() {
     setUserStats(prev => ({ ...prev, lessonsCompleted: 0 }));
   }
 
-  const dailyMissions = tasks.filter(t => !t.completed).slice(0, 4);
+    const isSunday = new Date().getDay() === 0;
+  const uncompletedTasks = tasks.filter(t => !t.completed);
+  let dailyMissions = [];
+  
+  if (isSunday) {
+    // Group 1 task per subject but make it a 25-question test
+    const subjectsAdded = new Set();
+    for (const t of uncompletedTasks) {
+      if (!subjectsAdded.has(t.subject)) {
+        dailyMissions.push({ ...t, title: `Weekly Mega Assessment: ${t.subject}`, subtopic: "25 Questions", isSundayTest: true });
+        subjectsAdded.add(t.subject);
+      }
+    }
+  } else {
+    // 1 sub lesson per subject
+    const subjectsAdded = new Set();
+    for (const t of uncompletedTasks) {
+      if (!subjectsAdded.has(t.subject)) {
+        dailyMissions.push(t);
+        subjectsAdded.add(t.subject);
+      }
+    }
+  }
   const isFullscreen = location.pathname.startsWith('/lesson') || location.pathname === '/speaking';
+  const isMessaging = location.pathname === '/messages' || location.pathname === '/friends';
+  const { unreadCount, refreshUnread } = useUnreadMessages(Boolean(currentUser));
+  const { pendingCount: pendingFriendRequests } = useFriendRequests(Boolean(currentUser));
+  const [siteAlertVisible, setSiteAlertVisible] = useState(false);
 
   return (
-    <div className="app">
+    <div className={`app${siteAlertVisible ? ' has-site-alert' : ''}`}>
       <BackgroundStars />
-      {!isFullscreen && <Navbar user={currentUser} onLogout={handleLogout} />}
+      {!isFullscreen && (
+        <>
+          <Navbar
+            user={currentUser}
+            onLogout={handleLogout}
+            unreadMessages={unreadCount}
+            pendingFriendRequests={pendingFriendRequests}
+          />
+          {currentUser && (
+            <SiteAlertBar
+              isEnabled
+              onVisibilityChange={setSiteAlertVisible}
+            />
+          )}
+        </>
+      )}
       
       <Routes>
         <Route path="/" element={!currentUser ? <Auth onLogin={handleLogin} /> : <Navigate to="/home" />} />
@@ -1635,7 +3728,7 @@ function App() {
         <Route path="/lesson/:lessonId" element={
           currentUser ? (
             <LessonPage 
-              lesson={tasks.find(t => t.id === location.pathname.split('/').pop()) || tasks[0]} 
+              lesson={dailyMissions.find(t => t.id === location.pathname.split('/').pop()) || tasks.find(t => t.id === location.pathname.split('/').pop()) || tasks[0]} 
               onBack={() => navigate('/home')} 
               onComplete={() => { toggleTask(location.pathname.split('/').pop()); navigate('/home'); }} 
             />
@@ -1658,6 +3751,16 @@ function App() {
             </div>
           ) : <Navigate to="/" />
         } />
+        <Route path="/messages" element={
+          currentUser ? (
+            <Messages currentUser={currentUser} onUnreadChange={refreshUnread} />
+          ) : <Navigate to="/" />
+        } />
+        <Route path="/friends" element={
+          currentUser ? (
+            <Friends currentUser={currentUser} />
+          ) : <Navigate to="/" />
+        } />
       </Routes>
 
       {!isFullscreen && (
@@ -1665,7 +3768,7 @@ function App() {
           <p>© 2026 StellarStudy. Launching your potential into the cosmos.</p>
         </footer>
       )}
-      {!isFullscreen && <AITutor userClass={selectedClass} />}
+      {!isFullscreen && !isMessaging && <AITutor userClass={selectedClass} />}
     </div>
   );
 }

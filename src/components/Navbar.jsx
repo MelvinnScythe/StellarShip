@@ -1,9 +1,43 @@
 import React, { useState } from 'react';
-import { Rocket, LogOut, User, Menu, X } from 'lucide-react';
+import { Rocket, LogOut, User, Menu, X, MessageCircle, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-const Navbar = ({ user, onLogout }) => {
+const UnreadBadge = ({ count }) => {
+  if (!count || count <= 0) return null;
+  return (
+    <span className="nav-unread-dot" aria-label={`${count} unread messages`}>
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+};
+
+const NavLinkButton = ({ item, unreadMessages, onNavigate, className, style, onMouseOver, onMouseOut }) => {
+  const Icon = item.icon;
+  const showBadge = item.path === '/messages' && unreadMessages > 0;
+  const iconSize = className ? 24 : 16;
+
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={onNavigate}
+      style={{ ...style, position: 'relative' }}
+      onMouseOver={onMouseOver}
+      onMouseOut={onMouseOut}
+    >
+      {Icon ? (
+        <span className="nav-icon-wrap">
+          <Icon size={iconSize} />
+          {showBadge && <UnreadBadge count={unreadMessages} />}
+        </span>
+      ) : null}
+      {item.name}
+    </button>
+  );
+};
+
+const Navbar = ({ user, onLogout, unreadMessages = 0, pendingFriendRequests = 0 }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -14,6 +48,13 @@ const Navbar = ({ user, onLogout }) => {
     { name: 'Subjects', path: '/home#subjects' },
     { name: 'Progress', path: '/home#progress' },
     { name: 'Speaking', path: '/speaking' }
+  ];
+
+  const mobileNavLinks = [
+    ...navLinks.slice(0, 3),
+    { name: 'Friends', path: '/friends', icon: Users },
+    { name: 'Messages', path: '/messages', icon: MessageCircle },
+    navLinks[3]
   ];
   return (
     <nav style={{
@@ -28,6 +69,7 @@ const Navbar = ({ user, onLogout }) => {
       backdropFilter: 'blur(15px)',
       background: 'rgba(5, 5, 8, 0.8)',
       borderBottom: '1px solid var(--glass-border)',
+      overflow: 'visible',
     }}>
       <div 
         onClick={() => navigate('/home')}
@@ -52,9 +94,11 @@ const Navbar = ({ user, onLogout }) => {
       {/* Desktop Links */}
       <div className="desktop-only" style={{ display: 'flex', gap: '2.5rem', alignItems: 'center' }}>
         {navLinks.map((item) => (
-          <button 
-            key={item.name} 
-            onClick={() => {
+          <NavLinkButton
+            key={item.name}
+            item={item}
+            unreadMessages={unreadMessages}
+            onNavigate={() => {
               if (item.path.includes('#')) {
                 const [base, hash] = item.path.split('#');
                 navigate(base);
@@ -73,17 +117,46 @@ const Navbar = ({ user, onLogout }) => {
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              transition: 'color 0.3s'
-            }} 
-            onMouseOver={(e) => e.target.style.color = 'white'} 
-            onMouseOut={(e) => e.target.style.color = 'var(--text-secondary)'}
-          >
-            {item.name}
-          </button>
+              transition: 'color 0.3s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.color = 'white'; }}
+            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
+          />
         ))}
       </div>
 
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        {user && (
+          <>
+            <button
+              type="button"
+              className="nav-messages-quick"
+              onClick={() => navigate('/friends')}
+              title="Friends"
+              aria-label={pendingFriendRequests > 0 ? `Friends, ${pendingFriendRequests} requests` : 'Friends'}
+            >
+              <span className="nav-icon-wrap">
+                <Users size={20} />
+                <UnreadBadge count={pendingFriendRequests} />
+              </span>
+            </button>
+            <button
+              type="button"
+              className="nav-messages-quick"
+              onClick={() => navigate('/messages')}
+              title="Messages"
+              aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : 'Messages'}
+            >
+              <span className="nav-icon-wrap">
+                <MessageCircle size={20} />
+                <UnreadBadge count={unreadMessages} />
+              </span>
+            </button>
+          </>
+        )}
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div className="desktop-only" style={{ 
@@ -166,10 +239,13 @@ const Navbar = ({ user, onLogout }) => {
               borderLeft: '1px solid var(--glass-border)'
             }}
           >
-            {navLinks.map((item) => (
-              <button 
-                key={item.name} 
-                onClick={() => {
+            {mobileNavLinks.map((item) => (
+              <NavLinkButton
+                key={item.name}
+                item={item}
+                unreadMessages={unreadMessages}
+                className="nav-mobile-link"
+                onNavigate={() => {
                   setIsOpen(false);
                   if (item.path.includes('#')) {
                     const [base, hash] = item.path.split('#');
@@ -189,11 +265,12 @@ const Navbar = ({ user, onLogout }) => {
                   background: 'none',
                   border: 'none',
                   textAlign: 'left',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem'
                 }}
-              >
-                {item.name}
-              </button>
+              />
             ))}
             
             <div style={{ marginTop: 'auto', borderTop: '1px solid var(--glass-border)', paddingTop: '2rem' }}>

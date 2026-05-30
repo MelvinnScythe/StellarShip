@@ -1,0 +1,456 @@
+Class,Subject/Discipline,Chapter Number,Chapter Name
+Class 6,Mathematics,1,Knowing Our Numbers
+Class 6,Mathematics,2,Whole Numbers
+Class 6,Mathematics,3,Playing With Numbers
+Class 6,Mathematics,4,Basic Geometrical Ideas
+Class 6,Mathematics,5,Understanding Elementary Shapes
+Class 6,Mathematics,6,Integers
+Class 6,Mathematics,7,Fractions
+Class 6,Mathematics,8,Decimals
+Class 6,Mathematics,9,Data Handling
+Class 6,Mathematics,10,Mensuration
+Class 6,Mathematics,11,Algebra
+Class 6,Mathematics,12,Ratio and Proportion
+Class 6,Science,1,Components of Food
+Class 6,Science,2,Sorting Materials into Groups
+Class 6,Science,3,Separation of Substances
+Class 6,Science,4,Getting to Know Plants
+Class 6,Science,5,Body Movements
+Class 6,Science,6,The Living Organisms and Their Surroundings
+Class 6,Science,7,Motion and Measurement of Distances
+Class 6,Science,8,Light Shadows and Reflections
+Class 6,Science,9,Electricity and Circuits
+Class 6,Science,10,Fun with Magnets
+Class 6,Science,11,Air Around Us
+Class 6,Social Science - History,1,What Where How and When?
+Class 6,Social Science - History,2,From Hunting-Gathering to Growing Food
+Class 6,Social Science - History,3,In the Earliest Cities
+Class 6,Social Science - History,4,What Books and Burials Tell Us
+Class 6,Social Science - History,5,Kingdoms Kings and an Early Republic
+Class 6,Social Science - History,6,New Questions and Ideas
+Class 6,Social Science - History,7,From a Kingdom to an Empire
+Class 6,Social Science - History,8,Villages Towns and Trade
+Class 6,Social Science - History,9,New Empires and Kingdoms
+Class 6,Social Science - History,10,Buildings Paintings and Books
+Class 6,Social Science - Geography,1,The Earth in the Solar System
+Class 6,Social Science - Geography,2,Globe: Latitudes and Longitudes
+Class 6,Social Science - Geography,3,Motions of the Earth
+Class 6,Social Science - Geography,4,Maps
+Class 6,Social Science - Geography,5,Major Domains of the Earth
+Class 6,Social Science - Geography,6,Our Country - India
+Class 6,Social Science - Civics,1,Understanding Diversity
+Class 6,Social Science - Civics,2,Diversity and Discrimination
+Class 6,Social Science - Civics,3,What is Government?
+Class 6,Social Science - Civics,4,Panchayati Raj
+Class 6,Social Science - Civics,5,Rural Administration
+Class 6,Social Science - Civics,6,Urban Administration
+Class 6,Social Science - Civics,7,Rural Livelihoods
+Class 6,Social Science - Civics,8,Urban Livelihoods
+Class 6,English (Honeysuckle),1,Who Did Patrick's Homework?
+Class 6,English (Honeysuckle),2,How the Dog Found Himself a New Master!
+Class 6,English (Honeysuckle),3,Taro's Reward
+Class 6,English (Honeysuckle),4,An Indian - American Woman in Space: Kalpana Chawla
+Class 6,English (Honeysuckle),5,A Different Kind of School
+Class 6,English (Honeysuckle),6,Who I Am
+Class 6,English (Honeysuckle),7,Fair Play
+Class 6,English (Honeysuckle),8,A Game of Chance
+Class 6,English (Honeysuckle),9,Desert Animals
+Class 6,English (Honeysuckle),10,The Banyan Tree
+Class 6,English (A Pact with the Sun),1,A Tale of Two Birds
+Class 6,English (A Pact with the Sun),2,The Friendly Mongoose
+Class 6,English (A Pact with the Sun),3,The Shepherd's Treasure
+Class 6,English (A Pact with the Sun),4,The Old-Clock Shop
+Class 6,English (A Pact with the Sun),5,Tansen
+Class 6,English (A Pact with the Sun),6,The Monkey and the Crocodile
+Class 6,English (A Pact with the Sun),7,The Wonder Called Sleep
+Class 6,English (A Pact with the Sun),8,A Pact with the Sun
+Class 6,English (A Pact with the Sun),9,What Happened to the Reptiles
+Class 6,English (A Pact with the Sun),10,A Strange Wrestling Match
+Class 6,Hindi (Vasant),1,वह चिड़िया जो
+Class 6,Hindi (Vasant),2,बचपन
+Class 6,Hindi (Vasant),3,नादान दोस्त
+Class 6,Hindi (Vasant),4,चाँद से थोड़ी-सी गप्पें
+Class 6,Hindi (Vasant),5,अक्षरों का महत्व
+Class 6,Hindi (Vasant),6,पार नज़र के
+Class 6,Hindi (Vasant),7,साथी हाथ बढ़ाना
+Class 6,Hindi (Vasant),8,ऐसे-ऐसे
+Class 6,Hindi (Vasant),9,टिकट अलबम
+Class 6,Hindi (Vasant),10,झाँसी की रानी
+Class 6,Hindi (Vasant),11,जो देखकर भी नहीं देखते
+Class 6,Hindi (Vasant),12,संसार पुस्तक है
+Class 6,Hindi (Vasant),13,मैं सबसे छोटी होऊँ
+Class 6,Hindi (Vasant),14,लोकगीत
+Class 6,Hindi (Vasant),15,नौकर
+Class 6,Hindi (Vasant),16,वन के मार्ग में
+Class 6,Hindi (Vasant),17,साँस-साँस में बाँस
+Class 7,Mathematics,1,Integers
+Class 7,Mathematics,2,Fractions and Decimals
+Class 7,Mathematics,3,Data Handling
+Class 7,Mathematics,4,Simple Equations
+Class 7,Mathematics,5,Lines and Angles
+Class 7,Mathematics,6,The Triangle and its Properties
+Class 7,Mathematics,7,Congruence of Triangles
+Class 7,Mathematics,8,Comparing Quantities
+Class 7,Mathematics,9,Rational Numbers
+Class 7,Mathematics,10,Practical Geometry
+Class 7,Mathematics,11,Perimeter and Area
+Class 7,Mathematics,12,Algebraic Expressions
+Class 7,Mathematics,13,Exponents and Powers
+Class 7,Mathematics,14,Symmetry
+Class 7,Mathematics,15,Visualising Solid Shapes
+Class 7,Science,1,Nutrition in Plants
+Class 7,Science,2,Nutrition in Animals
+Class 7,Science,3,Heat
+Class 7,Science,4,Acids Bases and Salts
+Class 7,Science,5,Physical and Chemical Changes
+Class 7,Science,6,Respiration in Organisms
+Class 7,Science,7,Transportation in Animals and Plants
+Class 7,Science,8,Reproduction in Plants
+Class 7,Science,9,Motion and Time
+Class 7,Science,10,Electric Current and its Effects
+Class 7,Science,11,Light
+Class 7,Science,12,Forests: Our Lifeline
+Class 7,Science,13,Wastewater Story
+Class 7,Social Science - History,1,Introduction: Tracing Changes Through a Thousand Years
+Class 7,Social Science - History,2,New Kings and Kingdoms
+Class 7,Social Science - History,3,Delhi: 12th to 15th Century
+Class 7,Social Science - History,4,The Mughals (16th to 17th Century)
+Class 7,Social Science - History,5,Rulers and Buildings
+Class 7,Social Science - History,6,Towns Traders and Craftspersons
+Class 7,Social Science - History,7,Tribes Nomads and Settled Communities
+Class 7,Social Science - History,8,Devotional Paths to the Divine
+Class 7,Social Science - History,9,The Making of Regional Cultures
+Class 7,Social Science - History,10,18th-Century Political Formations
+Class 7,Social Science - Geography,1,Environment
+Class 7,Social Science - Geography,2,Inside Our Earth
+Class 7,Social Science - Geography,3,Our Changing Earth
+Class 7,Social Science - Geography,4,Air
+Class 7,Social Science - Geography,5,Water
+Class 7,Social Science - Geography,6,Natural Vegetation and Wildlife
+Class 7,Social Science - Geography,7,Human Environment - Settlement Transport and Communication
+Class 7,Social Science - Geography,8,Human Environment Interactions - The Tropical and Subtropical Regions
+Class 7,Social Science - Geography,9,Life in the Deserts
+Class 7,Social Science - Civics,1,On Equality
+Class 7,Social Science - Civics,2,Role of the Government in Health
+Class 7,Social Science - Civics,3,How the State Government Works
+Class 7,Social Science - Civics,4,Growing up as Boys and Girls
+Class 7,Social Science - Civics,5,Women Change the World
+Class 7,Social Science - Civics,6,Understanding Media
+Class 7,Social Science - Civics,7,Markets Around Us
+Class 7,Social Science - Civics,8,A Shirt in the Market
+Class 7,Social Science - Civics,9,Struggles for Equality
+Class 7,English (Honeycomb),1,Three Questions
+Class 7,English (Honeycomb),2,A Gift of Chappals
+Class 7,English (Honeycomb),3,Gopal and the Hilsa Fish
+Class 7,English (Honeycomb),4,The Ashes That Made Trees Bloom
+Class 7,English (Honeycomb),5,Quality
+Class 7,English (Honeycomb),6,Expert Detectives
+Class 7,English (Honeycomb),7,The Invention of Vita-Wonk
+Class 7,English (Honeycomb),8,Fire: Friend and Foe
+Class 7,English (Honeycomb),9,A Bicycle in Good Repair
+Class 7,English (Honeycomb),10,The Story of Cricket
+Class 7,English (An Alien Hand),1,The Tiny Teacher
+Class 7,English (An Alien Hand),2,Bringing up Kari
+Class 7,English (An Alien Hand),3,The Desert
+Class 7,English (An Alien Hand),4,The Cop and the Anthem
+Class 7,English (An Alien Hand),5,Golu Grows a Nose
+Class 7,English (An Alien Hand),6,I Want Something in a Cage
+Class 7,English (An Alien Hand),7,Chandni
+Class 7,English (An Alien Hand),8,The Bear Story
+Class 7,English (An Alien Hand),9,A Tiger in the House
+Class 7,English (An Alien Hand),10,An Alien Hand
+Class 7,Hindi (Vasant),1,हम पंछी उन्मुक्त गगन के
+Class 7,Hindi (Vasant),2,दादी माँ
+Class 7,Hindi (Vasant),3,हिमालय की बेटियां
+Class 7,Hindi (Vasant),4,कठपुतली
+Class 7,Hindi (Vasant),5,मिठाईवाला
+Class 7,Hindi (Vasant),6,रक्त और हमारा शरीर
+Class 7,Hindi (Vasant),7,पापा खो गए
+Class 7,Hindi (Vasant),8,शाम-एक किसान
+Class 7,Hindi (Vasant),9,चिड़िया की बच्ची
+Class 7,Hindi (Vasant),10,अपूर्व अनुभव
+Class 7,Hindi (Vasant),11,रहीम की दोहे
+Class 7,Hindi (Vasant),12,कंचा
+Class 7,Hindi (Vasant),13,एक तिनका
+Class 7,Hindi (Vasant),14,खानपान की बदलती तस्वीर
+Class 7,Hindi (Vasant),15,नीलकंठ
+Class 7,Hindi (Vasant),16,भोर और बरखा
+Class 7,Hindi (Vasant),17,वीर कुंवर सिंह
+Class 7,Hindi (Vasant),18,संघर्ष के कारण मैं तुनुकमिज़ाज हो गया: धनराज
+Class 7,Hindi (Vasant),19,आश्रम का अनुमानित व्यय
+Class 7,Hindi (Vasant),20,विप्लव गायन
+Class 8,Mathematics,1,Rational Numbers
+Class 8,Mathematics,2,Linear Equations in One Variable
+Class 8,Mathematics,3,Understanding Quadrilaterals
+Class 8,Mathematics,4,Practical Geometry
+Class 8,Mathematics,5,Data Handling
+Class 8,Mathematics,6,Squares and Square Roots
+Class 8,Mathematics,7,Cubes and Cube Roots
+Class 8,Mathematics,8,Comparing Quantities
+Class 8,Mathematics,9,Algebraic Expressions and Identities
+Class 8,Mathematics,10,Visualising Solid Shapes
+Class 8,Mathematics,11,Mensuration
+Class 8,Mathematics,12,Exponents and Powers
+Class 8,Mathematics,13,Direct and Inverse Proportions
+Class 8,Mathematics,14,Factorisation
+Class 8,Mathematics,15,Introduction to Graphs
+Class 8,Mathematics,16,Playing with Numbers
+Class 8,Science,1,Crop Production and Management
+Class 8,Science,2,Microorganisms: Friend and Foe
+Class 8,Science,3,Synthetic Fibres and Plastics
+Class 8,Science,4,Materials: Metals and Non-Metals
+Class 8,Science,5,Coal and Petroleum
+Class 8,Science,6,Combustion and Flame
+Class 8,Science,7,Conservation of Plants and Animals
+Class 8,Science,8,Cell — Structure and Functions
+Class 8,Science,9,Reproduction in Animals
+Class 8,Science,10,Reaching the Age of Adolescence
+Class 8,Science,11,Force and Pressure
+Class 8,Science,12,Friction
+Class 8,Science,13,Sound
+Class 8,Science,14,Chemical Effects of Electric Current
+Class 8,Science,15,Some Natural Phenomena
+Class 8,Science,16,Light
+Class 8,Science,17,Stars and the Solar System
+Class 8,Science,18,Pollution of Air and Water
+Class 8,Social Science - History,1,How When and Where
+Class 8,Social Science - History,2,From Trade to Territory
+Class 8,Social Science - History,3,Ruling the Countryside
+Class 8,Social Science - History,4,Tribals Dikus and the Vision of a Golden Age
+Class 8,Social Science - History,5,When People Rebel
+Class 8,Social Science - History,6,Colonialism and the City
+Class 8,Social Science - History,7,Weavers Iron Smelters and Factory Owners
+Class 8,Social Science - History,8,Civilising the Native Educating the Nation
+Class 8,Social Science - History,9,Women Caste and Reform
+Class 8,Social Science - History,10,The Changing World of Visual Arts
+Class 8,Social Science - History,11,The Making of the National Movement: 1870s-1947
+Class 8,Social Science - History,12,India After Independence
+Class 8,Social Science - Geography,1,Resources
+Class 8,Social Science - Geography,2,Land Soil Water Natural Vegetation and Wildlife Resources
+Class 8,Social Science - Geography,3,Mineral and Power Resources
+Class 8,Social Science - Geography,4,Agriculture
+Class 8,Social Science - Geography,5,Industries
+Class 8,Social Science - Geography,6,Human Resources
+Class 8,Social Science - Civics,1,The Indian Constitution
+Class 8,Social Science - Civics,2,Understanding Secularism
+Class 8,Social Science - Civics,3,Why do we need a Parliament?
+Class 8,Social Science - Civics,4,Understanding Laws
+Class 8,Social Science - Civics,5,Judiciary
+Class 8,Social Science - Civics,6,Understanding Our Criminal Justice System
+Class 8,Social Science - Civics,7,Understanding Marginalisation
+Class 8,Social Science - Civics,8,Confronting Marginalisation
+Class 8,Social Science - Civics,9,Public Facilities
+Class 8,Social Science - Civics,10,Law and Social Justice
+Class 8,English (Honeydew),1,The Best Christmas Present in the World
+Class 8,English (Honeydew),2,The Tsunami
+Class 8,English (Honeydew),3,Glimpses of the Past
+Class 8,English (Honeydew),4,Bepin Choudhury's Lapse of Memory
+Class 8,English (Honeydew),5,The Summit Within
+Class 8,English (Honeydew),6,This is Jody's Fawn
+Class 8,English (Honeydew),7,A Visit to Cambridge
+Class 8,English (Honeydew),8,A Short Monsoon Diary
+Class 8,English (Honeydew),9,The Great Stone Face - I
+Class 8,English (Honeydew),10,The Great Stone Face - II
+Class 8,English (It So Happened),1,How the Camel got his hump
+Class 8,English (It So Happened),2,Children at work
+Class 8,English (It So Happened),3,The Selfish Giant
+Class 8,English (It So Happened),4,The treasure within
+Class 8,English (It So Happened),5,Princess September
+Class 8,English (It So Happened),6,The fight
+Class 8,English (It So Happened),7,The open window
+Class 8,English (It So Happened),8,Jalebis
+Class 8,English (It So Happened),9,The comet - I
+Class 8,English (It So Happened),10,The comet - II
+Class 8,Hindi (Vasant),1,ध्वनि
+Class 8,Hindi (Vasant),2,लाख की चूड़ियाँ
+Class 8,Hindi (Vasant),3,बस की यात्रा
+Class 8,Hindi (Vasant),4,दीवानों की हस्ती
+Class 8,Hindi (Vasant),5,चिट्ठियों की अनूठी दुनिया
+Class 8,Hindi (Vasant),6,भगवान के डाकिए
+Class 8,Hindi (Vasant),7,क्या निराश हुआ जाए
+Class 8,Hindi (Vasant),8,यह सबसे कठिन समय नहीं
+Class 8,Hindi (Vasant),9,कबीर की साखियाँ
+Class 8,Hindi (Vasant),10,कामचोर
+Class 8,Hindi (Vasant),11,जब सिनेमा ने बोलना सीखा
+Class 8,Hindi (Vasant),12,सुदामा चरित
+Class 8,Hindi (Vasant),13,जहाँ पहिया है
+Class 8,Hindi (Vasant),14,अकबरी लोटा
+Class 8,Hindi (Vasant),15,सूर के पद
+Class 8,Hindi (Vasant),16,पानी की कहानी
+Class 8,Hindi (Vasant),17,बाज और साँप
+Class 8,Hindi (Vasant),18,टोपी
+Class 9,Mathematics,1,Number Systems
+Class 9,Mathematics,2,Polynomials
+Class 9,Mathematics,3,Coordinate Geometry
+Class 9,Mathematics,4,Linear Equations in Two Variables
+Class 9,Mathematics,5,Introduction to Euclid's Geometry
+Class 9,Mathematics,6,Lines and Angles
+Class 9,Mathematics,7,Triangles
+Class 9,Mathematics,8,Quadrilaterals
+Class 9,Mathematics,9,Areas of Parallelograms and Triangles
+Class 9,Mathematics,10,Circles
+Class 9,Mathematics,11,Constructions
+Class 9,Mathematics,12,Heron's Formula
+Class 9,Mathematics,13,Surface Areas and Volumes
+Class 9,Mathematics,14,Statistics
+Class 9,Mathematics,15,Probability
+Class 9,Science,1,Matter in Our Surroundings
+Class 9,Science,2,Is Matter Around Us Pure
+Class 9,Science,3,Atoms and Molecules
+Class 9,Science,4,Structure of the Atom
+Class 9,Science,5,The Fundamental Unit of Life
+Class 9,Science,6,Tissues
+Class 9,Science,7,Diversity in Living Organisms
+Class 9,Science,8,Motion
+Class 9,Science,9,Force and Laws of Motion
+Class 9,Science,10,Gravitation
+Class 9,Science,11,Work and Energy
+Class 9,Science,12,Sound
+Class 9,Science,13,Why Do We Fall Ill
+Class 9,Science,14,Natural Resources
+Class 9,Science,15,Improvement in Food Resources
+Class 9,Social Science - History,1,The French Revolution
+Class 9,Social Science - History,2,Socialism in Europe and the Russian Revolution
+Class 9,Social Science - History,3,Nazism and the Rise of Hitler
+Class 9,Social Science - History,4,Forest Society and Colonialism
+Class 9,Social Science - History,5,Pastoralists in the Modern World
+Class 9,Social Science - Geography,1,India - Size and Location
+Class 9,Social Science - Geography,2,Physical Features of India
+Class 9,Social Science - Geography,3,Drainage
+Class 9,Social Science - Geography,4,Climate
+Class 9,Social Science - Geography,5,Natural Vegetation and Wild Life
+Class 9,Social Science - Geography,6,Population
+Class 9,Social Science - Civics,1,What is Democracy? Why Democracy?
+Class 9,Social Science - Civics,2,Constitutional Design
+Class 9,Social Science - Civics,3,Electoral Politics
+Class 9,Social Science - Civics,4,Working of Institutions
+Class 9,Social Science - Civics,5,Democratic Rights
+Class 9,Social Science - Economics,1,The Story of Village Palampur
+Class 9,Social Science - Economics,2,People as Resource
+Class 9,Social Science - Economics,3,Poverty as a Challenge
+Class 9,Social Science - Economics,4,Food Security in India
+Class 9,English (Beehive),1,The Fun They Had
+Class 9,English (Beehive),2,The Sound of Music
+Class 9,English (Beehive),3,The Little Girl
+Class 9,English (Beehive),4,A Truly Beautiful Mind
+Class 9,English (Beehive),5,The Snake and the Mirror
+Class 9,English (Beehive),6,My Childhood
+Class 9,English (Beehive),7,Packing
+Class 9,English (Beehive),8,Reach for the Top
+Class 9,English (Beehive),9,The Bond of Love
+Class 9,English (Beehive),10,Kathmandu
+Class 9,English (Beehive),11,If I Were You
+Class 9,English (Moments),1,The Lost Child
+Class 9,English (Moments),2,The Adventures of Toto
+Class 9,English (Moments),3,Iswaran the Storyteller
+Class 9,English (Moments),4,In the Kingdom of Fools
+Class 9,English (Moments),5,The Happy Prince
+Class 9,English (Moments),6,Weathering the Storm in Ersama
+Class 9,English (Moments),7,The Last Leaf
+Class 9,English (Moments),8,A House Is Not a Home
+Class 9,English (Moments),9,The Accidental Tourist
+Class 9,English (Moments),10,The Beggar
+Class 9,Hindi (Kshitij),1,दो बैलों की कथा
+Class 9,Hindi (Kshitij),2,ल्हासा की ओर
+Class 9,Hindi (Kshitij),3,उपभोक्तावाद की संस्कृति
+Class 9,Hindi (Kshitij),4,साँवले सपनों की याद
+Class 9,Hindi (Kshitij),5,नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया
+Class 9,Hindi (Kshitij),6,प्रेमचंद के फटे जूते
+Class 9,Hindi (Kshitij),7,मेरे बचपन के दिन
+Class 9,Hindi (Kshitij),8,एक कुत्ता और एक मैना
+Class 9,Hindi (Kshitij),9,साखियाँ एवं सबद
+Class 9,Hindi (Kshitij),10,वाख
+Class 9,Hindi (Kshitij),11,सवैया
+Class 9,Hindi (Kshitij),12,कैदी और कोकिला
+Class 9,Hindi (Kshitij),13,ग्राम श्री
+Class 9,Hindi (Kshitij),14,चंद्र गहना से लौटती बेर
+Class 9,Hindi (Kshitij),15,मेघ आए
+Class 9,Hindi (Kshitij),16,यमराज की दिशा
+Class 9,Hindi (Kshitij),17,बच्चे काम पर जा रहे हैं
+Class 10,Mathematics,1,Real Numbers
+Class 10,Mathematics,2,Polynomials
+Class 10,Mathematics,3,Pair of Linear Equations in Two Variables
+Class 10,Mathematics,4,Quadratic Equations
+Class 10,Mathematics,5,Arithmetic Progressions
+Class 10,Mathematics,6,Triangles
+Class 10,Mathematics,7,Coordinate Geometry
+Class 10,Mathematics,8,Introduction to Trigonometry
+Class 10,Mathematics,9,Some Applications of Trigonometry
+Class 10,Mathematics,10,Circles
+Class 10,Mathematics,11,Areas Related to Circles
+Class 10,Mathematics,12,Surface Areas and Volumes
+Class 10,Mathematics,13,Statistics
+Class 10,Mathematics,14,Probability
+Class 10,Science,1,Chemical Reactions and Equations
+Class 10,Science,2,Acids Bases and Salts
+Class 10,Science,3,Metals and Non-metals
+Class 10,Science,4,Carbon and its Compounds
+Class 10,Science,5,Life Processes
+Class 10,Science,6,Control and Coordination
+Class 10,Science,7,How do Organisms Reproduce?
+Class 10,Science,8,Heredity
+Class 10,Science,9,Light - Reflection and Refraction
+Class 10,Science,10,The Human Eye and the Colorful World
+Class 10,Science,11,Electricity
+Class 10,Science,12,Magnetic Effects of Electric Current
+Class 10,Science,13,Our Environment
+Class 10,Social Science - History,1,The Rise of Nationalism in Europe
+Class 10,Social Science - History,2,Nationalism in India
+Class 10,Social Science - History,3,The Making of a Global World
+Class 10,Social Science - History,4,The Age of Industrialisation
+Class 10,Social Science - History,5,Print Culture and the Modern World
+Class 10,Social Science - Geography,1,Resources and Development
+Class 10,Social Science - Geography,2,Forest and Wildlife Resources
+Class 10,Social Science - Geography,3,Water Resources
+Class 10,Social Science - Geography,4,Agriculture
+Class 10,Social Science - Geography,5,Minerals and Energy Resources
+Class 10,Social Science - Geography,6,Manufacturing Industries
+Class 10,Social Science - Geography,7,Lifelines of National Economy
+Class 10,Social Science - Civics,1,Power Sharing
+Class 10,Social Science - Civics,2,Federalism
+Class 10,Social Science - Civics,3,Gender Religion and Caste
+Class 10,Social Science - Civics,4,Political Parties
+Class 10,Social Science - Civics,5,Outcomes of Democracy
+Class 10,Social Science - Economics,1,Development
+Class 10,Social Science - Economics,2,Sectors of the Indian Economy
+Class 10,Social Science - Economics,3,Money and Credit
+Class 10,Social Science - Economics,4,Globalization and the Indian Economy
+Class 10,Social Science - Economics,5,Consumer Rights
+Class 10,English (First Flight),1,A Letter to God
+Class 10,English (First Flight),2,Nelson Mandela: Long Walk to Freedom
+Class 10,English (First Flight),3,Two Stories about Flying
+Class 10,English (First Flight),4,From the Diary of Anne Frank
+Class 10,English (First Flight),5,The Hundred Dresses - I
+Class 10,English (First Flight),6,The Hundred Dresses - II
+Class 10,English (First Flight),7,Glimpses of India
+Class 10,English (First Flight),8,Mijbil the Otter
+Class 10,English (First Flight),9,Madam Rides the Bus
+Class 10,English (First Flight),10,The Sermon at Benares
+Class 10,English (First Flight),11,The Proposal
+Class 10,English (Footprints Without Feet),1,A Triumph of Surgery
+Class 10,English (Footprints Without Feet),2,The Thief's Story
+Class 10,English (Footprints Without Feet),3,The Midnight Visitor
+Class 10,English (Footprints Without Feet),4,A Question of Trust
+Class 10,English (Footprints Without Feet),5,Footprints without Feet
+Class 10,English (Footprints Without Feet),6,The Making of a Scientist
+Class 10,English (Footprints Without Feet),7,The Necklace
+Class 10,English (Footprints Without Feet),8,The Hack Driver
+Class 10,English (Footprints Without Feet),9,Bholi
+Class 10,English (Footprints Without Feet),10,The Book That Saved the Earth
+Class 10,Hindi (Kshitij),1,पद (सूरदास)
+Class 10,Hindi (Kshitij),2,राम-लक्ष्मण-परशुराम संवाद
+Class 10,Hindi (Kshitij),3,सवैया और कवित्त
+Class 10,Hindi (Kshitij),4,आत्मकथ्य
+Class 10,Hindi (Kshitij),5,उत्साह और अट नहीं रही है
+Class 10,Hindi (Kshitij),6,यह दंतुरित मुसकान और फसल
+Class 10,Hindi (Kshitij),7,छाया मत छूना
+Class 10,Hindi (Kshitij),8,कन्यादान
+Class 10,Hindi (Kshitij),9,संगतकार
+Class 10,Hindi (Kshitij),10,नेताजी का चश्मा
+Class 10,Hindi (Kshitij),11,बालगोबिन भगत
+Class 10,Hindi (Kshitij),12,लखनवी अंदाज़
+Class 10,Hindi (Kshitij),13,मानवीय करुणा की दिव्या चमक
+Class 10,Hindi (Kshitij),14,एक कहानी यह भी
+Class 10,Hindi (Kshitij),15,स्त्री शिक्षा के विरोधी कुतर्कों का खंडन
+Class 10,Hindi (Kshitij),16,नौबतखाने में इबादत
+Class 10,Hindi (Kshitij),17,संस्कृति

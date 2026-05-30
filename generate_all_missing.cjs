@@ -1,7 +1,24 @@
 const fs = require('fs');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const apiKey = 'AIzaSyC424fdPp2y9nTxrtLyjEw1f8Pg2Hgwqwo';
+// Read API key from .env file securely
+let apiKey = '';
+try {
+  const envFile = fs.readFileSync('.env', 'utf8');
+  const match = envFile.match(/GEMINI_API_KEY=(.*)/);
+  if (match && match[1]) {
+    apiKey = match[1].trim();
+  }
+} catch (e) {
+  console.error("Could not read .env file. Please create one with GEMINI_API_KEY=your_key_here");
+  process.exit(1);
+}
+
+if (!apiKey) {
+  console.error("GEMINI_API_KEY not found in .env file.");
+  process.exit(1);
+}
+
 const genAI = new GoogleGenerativeAI(apiKey);
 
 async function generateChapterContent(chapterName) {
@@ -52,7 +69,7 @@ async function main() {
   let curriculumData = fs.readFileSync(filePath, 'utf8');
 
   // Find all placeholder chapters. They have 'Welcome to the lesson on'
-  const regex = /"([^"]+)":\s*\{\s*content:\s*"Welcome to the lesson on [^"]+",\s*quiz:\s*\[[\s\S]*?\]\s*\}/g;
+  const regex = /"([^"]+)":\s*\{\s*content:\s*"Welcome to the lesson on [^"]+",\s*quiz:\s*\[[\s\S]*?\],\s*topics:\s*\[[\s\S]*?\]\s*\}/g;
   
   let match;
   const matches = [];

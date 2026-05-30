@@ -6,10 +6,27 @@ const User = require('../models/User');
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const buildNickname = (name, email) => {
+  if (name) return name.trim().split(/\s+/)[0];
+  return email.split('@')[0];
+};
+
+const publicUser = (user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  nickname: user.nickname || buildNickname(user.name, user.email),
+  xpEarned: user.xpEarned,
+  dailyXP: user.dailyXP,
+  level: user.level,
+  selectedClass: user.selectedClass,
+  streak: user.streak
+});
+
 // @route   POST api/auth/signup
 // @desc    Register a new user
 router.post('/signup', async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, nickname } = req.body;
 
   try {
     let user = await User.findOne({ email });
@@ -17,7 +34,7 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ msg: 'User already exists' });
     }
 
-    user = new User({ name, email, password });
+    user = new User({ name, email, nickname: nickname || buildNickname(name, email), password });
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
@@ -29,7 +46,7 @@ router.post('/signup', async (req, res) => {
     const payload = { user: { id: user.id, name: user.name } };
     jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
       if (err) throw err;
-      res.json({ token, user: { id: user.id, name: user.name, email: user.email, xpEarned: user.xpEarned, level: user.level, selectedClass: user.selectedClass, streak: user.streak } });
+      res.json({ token, user: publicUser(user) });
     });
   } catch (err) {
     console.error(err.message);
@@ -56,7 +73,7 @@ router.post('/login', async (req, res) => {
     const payload = { user: { id: user.id, name: user.name } };
     jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
       if (err) throw err;
-      res.json({ token, user: { id: user.id, name: user.name, email: user.email, xpEarned: user.xpEarned, level: user.level, selectedClass: user.selectedClass, streak: user.streak } });
+      res.json({ token, user: publicUser(user) });
     });
   } catch (err) {
     console.error(err.message);
@@ -77,7 +94,7 @@ router.post('/google', async (req, res) => {
 
     let user = await User.findOne({ email });
     if (!user) {
-      user = new User({ name, email, password: 'google-oauth-placeholder' });
+      user = new User({ name, email, nickname: buildNickname(name, email), password: 'google-oauth-placeholder' });
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(user.password, salt);
       await user.save();
@@ -86,7 +103,7 @@ router.post('/google', async (req, res) => {
     const payload = { user: { id: user.id, name: user.name } };
     jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, jwtToken) => {
       if (err) throw err;
-      res.json({ token: jwtToken, user: { id: user.id, name: user.name, email: user.email, xpEarned: user.xpEarned, level: user.level, selectedClass: user.selectedClass, streak: user.streak } });
+      res.json({ token: jwtToken, user: publicUser(user) });
     });
   } catch (err) {
     console.error("Google auth error:", err.message);

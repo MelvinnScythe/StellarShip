@@ -1,12 +1,3435 @@
-export const getLessonContent = (title, subject, lessonNum = 1) => {
+import generatedReadingMaterial from './generated_reading_material.json';
+
+const completedClass7ReadingTitles = new Set([
+  "Integers",
+  "Fractions and Decimals"
+]);
+
+const normalizeGeneratedTitle = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+
+const parseGeneratedReadingKey = (key) => {
+  const parts = key.split(' - ');
+  const classMatch = parts[0]?.match(/Class\s+(\d+)/);
+  const classNum = classMatch ? Number(classMatch[1]) : undefined;
+  const subject = parts[1] || '';
+  const hasSocialBranch = subject === 'Social Science' && ['History', 'Geography', 'Civics'].includes(parts[2]);
+  const titleStart = hasSocialBranch ? 3 : 2;
+  return {
+    classNum,
+    subject: hasSocialBranch ? `${subject} - ${parts[2]}` : subject,
+    title: normalizeGeneratedTitle(parts.slice(titleStart).join(' - '))
+  };
+};
+
+const generatedReadingRecords = Object.entries(generatedReadingMaterial)
+  .map(([key, data]) => ({ key, data, ...parseGeneratedReadingKey(key) }))
+  .filter((record) => (
+    record.classNum === 6 ||
+    (record.classNum === 7 && record.subject === 'Mathematics' && completedClass7ReadingTitles.has(record.title))
+  ));
+
+const generatedReadingTitlePools = generatedReadingRecords.reduce((pools, record) => {
+  const poolKey = `${record.classNum}::${record.subject}`;
+  const titles = pools.get(poolKey) || [];
+  titles.push(record.title);
+  pools.set(poolKey, titles);
+  return pools;
+}, new Map());
+
+const cleanGeneratedText = (value) => String(value || '')
+  .replace(/<[^>]*>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const shortenGeneratedText = (value, limit = 150) => {
+  const text = cleanGeneratedText(value);
+  if (text.length <= limit) return text;
+  const clipped = text.slice(0, limit);
+  return `${clipped.slice(0, Math.max(clipped.lastIndexOf(' '), 80)).trim()}...`;
+};
+
+const getGeneratedClue = (lesson) => {
+  const text = cleanGeneratedText(lesson?.explanation);
+  const firstSentence = text.match(/[^.!?।]+[.!?।]?/)?.[0] || text;
+  return shortenGeneratedText(firstSentence, 150);
+};
+
+const rotateGeneratedOptions = (options, seed) => {
+  if (!options.length) return options;
+  const offset = seed % options.length;
+  return [...options.slice(offset), ...options.slice(0, offset)];
+};
+
+const makeGeneratedOptions = (answer, candidates, seed) => {
+  const seen = new Set([normalizeGeneratedTitle(answer).toLowerCase()]);
+  const options = [answer];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeGeneratedTitle(candidate);
+    const key = normalized.toLowerCase();
+    if (!normalized || seen.has(key)) continue;
+    seen.add(key);
+    options.push(normalized);
+    if (options.length === 4) break;
+  }
+
+  for (const fallback of ['Practice Review', 'Chapter Summary', 'Final Assessment', 'Key Vocabulary']) {
+    if (options.length === 4) break;
+    if (seen.has(fallback.toLowerCase())) continue;
+    seen.add(fallback.toLowerCase());
+    options.push(fallback);
+  }
+
+  return rotateGeneratedOptions(options, seed);
+};
+
+const buildGeneratedQuiz = (record) => {
+  const lessons = Array.isArray(record.data.lessons) ? record.data.lessons : [];
+  const lessonTitles = lessons.map((lesson) => normalizeGeneratedTitle(lesson.title)).filter(Boolean);
+  const quiz = lessons.slice(0, 5).map((lesson, index) => {
+    const answer = normalizeGeneratedTitle(lesson.title);
+    return {
+      question: `Which subtopic best matches this idea: "${getGeneratedClue(lesson)}"?`,
+      options: makeGeneratedOptions(answer, lessonTitles, record.title.length + index),
+      answer
+    };
+  });
+
+  if (quiz.length < 5) {
+    const siblingTitles = generatedReadingTitlePools.get(`${record.classNum}::${record.subject}`) || [];
+    const clueTitles = lessonTitles.slice(0, 2).join('" and "');
+    quiz.push({
+      question: `Which chapter includes the subtopics "${clueTitles}"?`,
+      options: makeGeneratedOptions(record.title, siblingTitles, record.title.length + quiz.length),
+      answer: record.title
+    });
+  }
+
+  while (quiz.length < 5) {
+    quiz.push({
+      question: `Which chapter are you studying in this lesson set?`,
+      options: makeGeneratedOptions(record.title, generatedReadingRecords.map((item) => item.title), record.title.length + quiz.length),
+      answer: record.title
+    });
+  }
+
+  return quiz.slice(0, 5);
+};
+
+const generatedReadingByClassAndTitle = new Map();
+const generatedReadingByTitle = new Map();
+const generatedReadingTitleCounts = new Map();
+
+for (const record of generatedReadingRecords) {
+  const titleKey = normalizeGeneratedTitle(record.title);
+  generatedReadingTitleCounts.set(titleKey, (generatedReadingTitleCounts.get(titleKey) || 0) + 1);
+}
+
+for (const record of generatedReadingRecords) {
+  const entry = {
+    content: record.data.content,
+    quiz: buildGeneratedQuiz(record),
+    lessons: Array.isArray(record.data.lessons) ? record.data.lessons : []
+  };
+  const titleKey = normalizeGeneratedTitle(record.title);
+  generatedReadingByClassAndTitle.set(`${record.classNum}::${titleKey}`, entry);
+  if (generatedReadingTitleCounts.get(titleKey) === 1) {
+    generatedReadingByTitle.set(titleKey, entry);
+  }
+}
+
+const findGeneratedReadingEntry = (title, classNum) => {
+  const titleKey = normalizeGeneratedTitle(title);
+  if (classNum) {
+    const classSpecific = generatedReadingByClassAndTitle.get(`${classNum}::${titleKey}`);
+    return classSpecific || null;
+  }
+  return generatedReadingByTitle.get(titleKey);
+};
+
+const hasCompletedReadingForOtherClass = (title, classNum) => {
+  if (!classNum) return false;
+  const titleKey = normalizeGeneratedTitle(title);
+  return generatedReadingRecords.some((record) => (
+    normalizeGeneratedTitle(record.title) === titleKey && record.classNum !== classNum
+  ));
+};
+
+const getClassSpecificPlaceholderResult = (title, subject, lessonNum) => {
+  const quiz = [
+    { question: `What is the main idea of ${title}?`, options: ["Important concept", "Random detail", "Unrelated story", "No topic"], answer: "Important concept" },
+    { question: `Which subject does ${title} belong to?`, options: [subject, "Art only", "Sports only", "Music only"], answer: subject },
+    { question: `Why should you study ${title}?`, options: ["To build understanding", "To ignore examples", "To skip practice", "To avoid reading"], answer: "To build understanding" },
+    { question: `What helps you learn ${title} better?`, options: ["Practice and review", "Guessing only", "Copying answers", "Skipping lessons"], answer: "Practice and review" },
+    { question: `What should you do after this lesson?`, options: ["Revise the key points", "Forget the topic", "Close the book forever", "Avoid questions"], answer: "Revise the key points" }
+  ];
+  const lessonQuiz = lessonNum === 6 ? quiz : [quiz[(lessonNum - 1) % quiz.length]];
+
+  return {
+    content: `<h3><strong>Deep Dive into ${title}</strong></h3>
+              <p>This chapter is still using the standard lesson shell for this class. Review the topic name, recall what you already know, and use the quiz to check the basic learning goals until the full reading material is added.</p>`,
+    quiz: lessonQuiz,
+    topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+  };
+};
+
+const getGeneratedTopics = (lessons) => {
+  const topics = lessons.map((lesson) => normalizeGeneratedTitle(lesson.title)).filter(Boolean);
+  while (topics.length < 5) topics.push('Practice Review');
+  if (topics.length < 6) topics.push('Chapter Final Assessment');
+  return topics.slice(0, 6);
+};
+
+const getGeneratedLessonResult = (title, subject, lessonNum, classNum) => {
+  const data = findGeneratedReadingEntry(title, classNum);
+  if (!data) return null;
+
+  const lessons = Array.isArray(data.lessons) ? data.lessons : [];
+  const topics = getGeneratedTopics(lessons);
+  const isFinalAssessment = lessonNum === 6 && !lessons[lessonNum - 1];
+  const isPracticeReview = lessonNum < 6 && !lessons[lessonNum - 1];
+  const quiz = lessonNum === 6
+    ? data.quiz
+    : [data.quiz[(lessonNum - 1) % data.quiz.length]];
+
+  if (isFinalAssessment) {
+    return {
+      content: `<h3><strong>Chapter Final Assessment</strong></h3>
+                <p>You have completed the reading lessons for this chapter. Review the main ideas, then answer the full multiple-choice quiz to check your understanding.</p>`,
+      quiz,
+      lessons,
+      topics
+    };
+  }
+
+  if (isPracticeReview) {
+    return {
+      content: `<h3><strong>Practice Review</strong></h3>
+                <p>Review the chapter introduction and the completed lesson notes. Focus on the lesson titles, examples, and key ideas before attempting the next question.</p>`,
+      quiz,
+      lessons,
+      topics
+    };
+  }
+
+  const lesson = lessons[lessonNum - 1] || lessons[0];
+  return {
+    content: `<h3><strong>${lesson.title}</strong></h3>
+              <p>${lesson.explanation || data.content}</p>`,
+    quiz,
+    lessons,
+    topics
+  };
+};
+
+const getLessonContentOriginal = (title, subject, lessonNum = 1, classNum) => {
   let data;
+  const rawTitle = title;
   // Clean title for matching (remove prefixes and subtopic suffixes)
   let cleanTitle = title.split(" - ").pop();
   if (cleanTitle.includes(": ")) {
     cleanTitle = cleanTitle.split(": ")[0];
   }
 
+  const generatedReadingResult = getGeneratedLessonResult(rawTitle, subject, lessonNum, classNum) || getGeneratedLessonResult(cleanTitle, subject, lessonNum, classNum);
+  if (generatedReadingResult) {
+    return generatedReadingResult;
+  }
+
+  if (hasCompletedReadingForOtherClass(rawTitle, classNum) || hasCompletedReadingForOtherClass(cleanTitle, classNum)) {
+    return getClassSpecificPlaceholderResult(rawTitle, subject, lessonNum);
+  }
+
   const specificData = {
+    "Who Did Patrick's Homework?": {
+      content: "Welcome to the lesson on Who Did Patrick's Homework?! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Who Did Patrick's Homework??", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Who Did Patrick's Homework??", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "How the Dog Found Himself a New Master!": {
+      content: "Welcome to the lesson on How the Dog Found Himself a New Master!! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in How the Dog Found Himself a New Master!?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from How the Dog Found Himself a New Master!?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Taro's Reward": {
+      content: "Welcome to the lesson on Taro's Reward! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Taro's Reward?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Taro's Reward?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "An Indian - American Woman in Space: Kalpana Chawla": {
+      content: "Welcome to the lesson on An Indian - American Woman in Space: Kalpana Chawla! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in An Indian - American Woman in Space: Kalpana Chawla?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from An Indian - American Woman in Space: Kalpana Chawla?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Different Kind of School": {
+      content: "Welcome to the lesson on A Different Kind of School! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Different Kind of School?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Different Kind of School?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Who I Am": {
+      content: "Welcome to the lesson on Who I Am! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Who I Am?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Who I Am?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Fair Play": {
+      content: "Welcome to the lesson on Fair Play! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Fair Play?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Fair Play?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Game of Chance": {
+      content: "Welcome to the lesson on A Game of Chance! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Game of Chance?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Game of Chance?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Desert Animals": {
+      content: "Welcome to the lesson on Desert Animals! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Desert Animals?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Desert Animals?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Banyan Tree": {
+      content: "Welcome to the lesson on The Banyan Tree! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Banyan Tree?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Banyan Tree?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Tale of Two Birds": {
+      content: "Welcome to the lesson on A Tale of Two Birds! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Tale of Two Birds?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Tale of Two Birds?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Friendly Mongoose": {
+      content: "Welcome to the lesson on The Friendly Mongoose! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Friendly Mongoose?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Friendly Mongoose?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Shepherd's Treasure": {
+      content: "Welcome to the lesson on The Shepherd's Treasure! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Shepherd's Treasure?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Shepherd's Treasure?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Old-Clock Shop": {
+      content: "Welcome to the lesson on The Old-Clock Shop! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Old-Clock Shop?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Old-Clock Shop?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Tansen": {
+      content: "Welcome to the lesson on Tansen! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Tansen?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Tansen?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Monkey and the Crocodile": {
+      content: "Welcome to the lesson on The Monkey and the Crocodile! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Monkey and the Crocodile?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Monkey and the Crocodile?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Wonder Called Sleep": {
+      content: "Welcome to the lesson on The Wonder Called Sleep! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Wonder Called Sleep?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Wonder Called Sleep?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Pact with the Sun": {
+      content: "Welcome to the lesson on A Pact with the Sun! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Pact with the Sun?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Pact with the Sun?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "What Happened to the Reptiles": {
+      content: "Welcome to the lesson on What Happened to the Reptiles! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in What Happened to the Reptiles?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from What Happened to the Reptiles?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Strange Wrestling Match": {
+      content: "Welcome to the lesson on A Strange Wrestling Match! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Strange Wrestling Match?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Strange Wrestling Match?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "वह चिड़िया जो": {
+      content: "Welcome to the lesson on वह चिड़िया जो! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in वह चिड़िया जो?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from वह चिड़िया जो?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "बचपन": {
+      content: "Welcome to the lesson on बचपन! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in बचपन?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from बचपन?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "नादान दोस्त": {
+      content: "Welcome to the lesson on नादान दोस्त! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in नादान दोस्त?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from नादान दोस्त?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "चाँद से थोड़ी-सी गप्पें": {
+      content: "Welcome to the lesson on चाँद से थोड़ी-सी गप्पें! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in चाँद से थोड़ी-सी गप्पें?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from चाँद से थोड़ी-सी गप्पें?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "अक्षरों का महत्व": {
+      content: "Welcome to the lesson on अक्षरों का महत्व! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in अक्षरों का महत्व?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from अक्षरों का महत्व?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "पार नज़र के": {
+      content: "Welcome to the lesson on पार नज़र के! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in पार नज़र के?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from पार नज़र के?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "साथी हाथ बढ़ाना": {
+      content: "Welcome to the lesson on साथी हाथ बढ़ाना! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in साथी हाथ बढ़ाना?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from साथी हाथ बढ़ाना?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "ऐसे-ऐसे": {
+      content: "Welcome to the lesson on ऐसे-ऐसे! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in ऐसे-ऐसे?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from ऐसे-ऐसे?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "टिकट अलबम": {
+      content: "Welcome to the lesson on टिकट अलबम! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in टिकट अलबम?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from टिकट अलबम?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "झाँसी की रानी": {
+      content: "Welcome to the lesson on झाँसी की रानी! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in झाँसी की रानी?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from झाँसी की रानी?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "जो देखकर भी नहीं देखते": {
+      content: "Welcome to the lesson on जो देखकर भी नहीं देखते! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in जो देखकर भी नहीं देखते?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from जो देखकर भी नहीं देखते?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "संसार पुस्तक है": {
+      content: "Welcome to the lesson on संसार पुस्तक है! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in संसार पुस्तक है?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from संसार पुस्तक है?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "मैं सबसे छोटी होऊँ": {
+      content: "Welcome to the lesson on मैं सबसे छोटी होऊँ! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in मैं सबसे छोटी होऊँ?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from मैं सबसे छोटी होऊँ?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "लोकगीत": {
+      content: "Welcome to the lesson on लोकगीत! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in लोकगीत?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from लोकगीत?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "नौकर": {
+      content: "Welcome to the lesson on नौकर! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in नौकर?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from नौकर?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "वन के मार्ग में": {
+      content: "Welcome to the lesson on वन के मार्ग में! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in वन के मार्ग में?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from वन के मार्ग में?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "साँस-साँस में बाँस": {
+      content: "Welcome to the lesson on साँस-साँस में बाँस! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in साँस-साँस में बाँस?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from साँस-साँस में बाँस?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Human Environment Interactions - The Tropical and Subtropical R...": {
+      content: "Welcome to the lesson on Human Environment Interactions - The Tropical and Subtropical R...! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Human Environment Interactions - The Tropical and Subtropical R...?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Human Environment Interactions - The Tropical and Subtropical R...?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Three Questions": {
+      content: "Welcome to the lesson on Three Questions! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Three Questions?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Three Questions?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Gift of Chappals": {
+      content: "Welcome to the lesson on A Gift of Chappals! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Gift of Chappals?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Gift of Chappals?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Gopal and the Hilsa Fish": {
+      content: "Welcome to the lesson on Gopal and the Hilsa Fish! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Gopal and the Hilsa Fish?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Gopal and the Hilsa Fish?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Ashes That Made Trees Bloom": {
+      content: "Welcome to the lesson on The Ashes That Made Trees Bloom! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Ashes That Made Trees Bloom?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Ashes That Made Trees Bloom?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Quality": {
+      content: "Welcome to the lesson on Quality! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Quality?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Quality?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Expert Detectives": {
+      content: "Welcome to the lesson on Expert Detectives! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Expert Detectives?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Expert Detectives?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Invention of Vita-Wonk": {
+      content: "Welcome to the lesson on The Invention of Vita-Wonk! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Invention of Vita-Wonk?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Invention of Vita-Wonk?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Fire: Friend and Foe": {
+      content: "Welcome to the lesson on Fire: Friend and Foe! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Fire: Friend and Foe?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Fire: Friend and Foe?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Bicycle in Good Repair": {
+      content: "Welcome to the lesson on A Bicycle in Good Repair! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Bicycle in Good Repair?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Bicycle in Good Repair?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Story of Cricket": {
+      content: "Welcome to the lesson on The Story of Cricket! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Story of Cricket?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Story of Cricket?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Tiny Teacher": {
+      content: "Welcome to the lesson on The Tiny Teacher! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Tiny Teacher?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Tiny Teacher?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Bringing up Kari": {
+      content: "Welcome to the lesson on Bringing up Kari! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Bringing up Kari?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Bringing up Kari?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Desert": {
+      content: "Welcome to the lesson on The Desert! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Desert?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Desert?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Cop and the Anthem": {
+      content: "Welcome to the lesson on The Cop and the Anthem! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Cop and the Anthem?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Cop and the Anthem?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Golu Grows a Nose": {
+      content: "Welcome to the lesson on Golu Grows a Nose! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Golu Grows a Nose?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Golu Grows a Nose?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "I Want Something in a Cage": {
+      content: "Welcome to the lesson on I Want Something in a Cage! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in I Want Something in a Cage?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from I Want Something in a Cage?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Chandni": {
+      content: "Welcome to the lesson on Chandni! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Chandni?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Chandni?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Bear Story": {
+      content: "Welcome to the lesson on The Bear Story! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Bear Story?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Bear Story?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Tiger in the House": {
+      content: "Welcome to the lesson on A Tiger in the House! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Tiger in the House?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Tiger in the House?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "An Alien Hand": {
+      content: "Welcome to the lesson on An Alien Hand! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in An Alien Hand?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from An Alien Hand?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "हम पंछी उन्मुक्त गगन के": {
+      content: "Welcome to the lesson on हम पंछी उन्मुक्त गगन के! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in हम पंछी उन्मुक्त गगन के?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from हम पंछी उन्मुक्त गगन के?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "दादी माँ": {
+      content: "Welcome to the lesson on दादी माँ! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in दादी माँ?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from दादी माँ?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "हिमालय की बेटियां": {
+      content: "Welcome to the lesson on हिमालय की बेटियां! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in हिमालय की बेटियां?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from हिमालय की बेटियां?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "कठपुतली": {
+      content: "Welcome to the lesson on कठपुतली! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in कठपुतली?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from कठपुतली?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "मिठाईवाला": {
+      content: "Welcome to the lesson on मिठाईवाला! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in मिठाईवाला?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from मिठाईवाला?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "रक्त और हमारा शरीर": {
+      content: "Welcome to the lesson on रक्त और हमारा शरीर! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in रक्त और हमारा शरीर?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from रक्त और हमारा शरीर?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "पापा खो गए": {
+      content: "Welcome to the lesson on पापा खो गए! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in पापा खो गए?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from पापा खो गए?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "शाम-एक किसान": {
+      content: "Welcome to the lesson on शाम-एक किसान! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in शाम-एक किसान?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from शाम-एक किसान?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "चिड़िया की बच्ची": {
+      content: "Welcome to the lesson on चिड़िया की बच्ची! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in चिड़िया की बच्ची?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from चिड़िया की बच्ची?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "अपूर्व अनुभव": {
+      content: "Welcome to the lesson on अपूर्व अनुभव! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in अपूर्व अनुभव?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from अपूर्व अनुभव?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "रहीम की दोहे": {
+      content: "Welcome to the lesson on रहीम की दोहे! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in रहीम की दोहे?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from रहीम की दोहे?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "कंचा": {
+      content: "Welcome to the lesson on कंचा! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in कंचा?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from कंचा?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "एक तिनका": {
+      content: "Welcome to the lesson on एक तिनका! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in एक तिनका?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from एक तिनका?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "खानपान की बदलती तस्वीर": {
+      content: "Welcome to the lesson on खानपान की बदलती तस्वीर! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in खानपान की बदलती तस्वीर?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from खानपान की बदलती तस्वीर?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "नीलकंठ": {
+      content: "Welcome to the lesson on नीलकंठ! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in नीलकंठ?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from नीलकंठ?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "भोर और बरखा": {
+      content: "Welcome to the lesson on भोर और बरखा! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in भोर और बरखा?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from भोर और बरखा?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "वीर कुंवर सिंह": {
+      content: "Welcome to the lesson on वीर कुंवर सिंह! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in वीर कुंवर सिंह?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from वीर कुंवर सिंह?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "संघर्ष के कारण मैं तुनुकमिज़ाज हो गया: धनराज": {
+      content: "Welcome to the lesson on संघर्ष के कारण मैं तुनुकमिज़ाज हो गया: धनराज! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in संघर्ष के कारण मैं तुनुकमिज़ाज हो गया: धनराज?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from संघर्ष के कारण मैं तुनुकमिज़ाज हो गया: धनराज?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "आश्रम का अनुमानित व्यय": {
+      content: "Welcome to the lesson on आश्रम का अनुमानित व्यय! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in आश्रम का अनुमानित व्यय?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from आश्रम का अनुमानित व्यय?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "विप्लव गायन": {
+      content: "Welcome to the lesson on विप्लव गायन! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in विप्लव गायन?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from विप्लव गायन?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Best Christmas Present in the World": {
+      content: "Welcome to the lesson on The Best Christmas Present in the World! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Best Christmas Present in the World?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Best Christmas Present in the World?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Tsunami": {
+      content: "Welcome to the lesson on The Tsunami! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Tsunami?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Tsunami?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Glimpses of the Past": {
+      content: "Welcome to the lesson on Glimpses of the Past! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Glimpses of the Past?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Glimpses of the Past?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Bepin Choudhury's Lapse of Memory": {
+      content: "Welcome to the lesson on Bepin Choudhury's Lapse of Memory! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Bepin Choudhury's Lapse of Memory?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Bepin Choudhury's Lapse of Memory?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Summit Within": {
+      content: "Welcome to the lesson on The Summit Within! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Summit Within?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Summit Within?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "This is Jody's Fawn": {
+      content: "Welcome to the lesson on This is Jody's Fawn! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in This is Jody's Fawn?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from This is Jody's Fawn?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Visit to Cambridge": {
+      content: "Welcome to the lesson on A Visit to Cambridge! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Visit to Cambridge?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Visit to Cambridge?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Short Monsoon Diary": {
+      content: "Welcome to the lesson on A Short Monsoon Diary! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Short Monsoon Diary?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Short Monsoon Diary?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Great Stone Face - I": {
+      content: "Welcome to the lesson on The Great Stone Face - I! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Great Stone Face - I?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Great Stone Face - I?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Great Stone Face - II": {
+      content: "Welcome to the lesson on The Great Stone Face - II! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Great Stone Face - II?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Great Stone Face - II?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "How the Camel got his hump": {
+      content: "Welcome to the lesson on How the Camel got his hump! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in How the Camel got his hump?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from How the Camel got his hump?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Children at work": {
+      content: "Welcome to the lesson on Children at work! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Children at work?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Children at work?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Selfish Giant": {
+      content: "Welcome to the lesson on The Selfish Giant! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Selfish Giant?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Selfish Giant?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The treasure within": {
+      content: "Welcome to the lesson on The treasure within! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The treasure within?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The treasure within?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Princess September": {
+      content: "Welcome to the lesson on Princess September! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Princess September?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Princess September?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The fight": {
+      content: "Welcome to the lesson on The fight! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The fight?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The fight?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The open window": {
+      content: "Welcome to the lesson on The open window! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The open window?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The open window?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Jalebis": {
+      content: "Welcome to the lesson on Jalebis! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Jalebis?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Jalebis?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The comet - I": {
+      content: "Welcome to the lesson on The comet - I! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The comet - I?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The comet - I?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The comet - II": {
+      content: "Welcome to the lesson on The comet - II! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The comet - II?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The comet - II?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "ध्वनि": {
+      content: "Welcome to the lesson on ध्वनि! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in ध्वनि?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from ध्वनि?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "लाख की चूड़ियाँ": {
+      content: "Welcome to the lesson on लाख की चूड़ियाँ! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in लाख की चूड़ियाँ?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from लाख की चूड़ियाँ?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "बस की यात्रा": {
+      content: "Welcome to the lesson on बस की यात्रा! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in बस की यात्रा?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from बस की यात्रा?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "दीवानों की हस्ती": {
+      content: "Welcome to the lesson on दीवानों की हस्ती! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in दीवानों की हस्ती?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from दीवानों की हस्ती?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "चिट्ठियों की अनूठी दुनिया": {
+      content: "Welcome to the lesson on चिट्ठियों की अनूठी दुनिया! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in चिट्ठियों की अनूठी दुनिया?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from चिट्ठियों की अनूठी दुनिया?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "भगवान के डाकिए": {
+      content: "Welcome to the lesson on भगवान के डाकिए! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in भगवान के डाकिए?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from भगवान के डाकिए?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "क्या निराश हुआ जाए": {
+      content: "Welcome to the lesson on क्या निराश हुआ जाए! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in क्या निराश हुआ जाए?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from क्या निराश हुआ जाए?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "यह सबसे कठिन समय नहीं": {
+      content: "Welcome to the lesson on यह सबसे कठिन समय नहीं! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in यह सबसे कठिन समय नहीं?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from यह सबसे कठिन समय नहीं?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "कबीर की साखियाँ": {
+      content: "Welcome to the lesson on कबीर की साखियाँ! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in कबीर की साखियाँ?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from कबीर की साखियाँ?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "कामचोर": {
+      content: "Welcome to the lesson on कामचोर! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in कामचोर?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from कामचोर?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "जब सिनेमा ने बोलना सीखा": {
+      content: "Welcome to the lesson on जब सिनेमा ने बोलना सीखा! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in जब सिनेमा ने बोलना सीखा?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from जब सिनेमा ने बोलना सीखा?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "सुदामा चरित": {
+      content: "Welcome to the lesson on सुदामा चरित! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in सुदामा चरित?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from सुदामा चरित?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "जहाँ पहिया है": {
+      content: "Welcome to the lesson on जहाँ पहिया है! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in जहाँ पहिया है?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from जहाँ पहिया है?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "अकबरी लोटा": {
+      content: "Welcome to the lesson on अकबरी लोटा! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in अकबरी लोटा?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from अकबरी लोटा?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "सूर के पद": {
+      content: "Welcome to the lesson on सूर के पद! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in सूर के पद?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from सूर के पद?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "पानी की कहानी": {
+      content: "Welcome to the lesson on पानी की कहानी! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in पानी की कहानी?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from पानी की कहानी?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "बाज और साँप": {
+      content: "Welcome to the lesson on बाज और साँप! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in बाज और साँप?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from बाज और साँप?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "टोपी": {
+      content: "Welcome to the lesson on टोपी! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in टोपी?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from टोपी?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Fun They Had": {
+      content: "Welcome to the lesson on The Fun They Had! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Fun They Had?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Fun They Had?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Sound of Music": {
+      content: "Welcome to the lesson on The Sound of Music! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Sound of Music?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Sound of Music?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Little Girl": {
+      content: "Welcome to the lesson on The Little Girl! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Little Girl?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Little Girl?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Truly Beautiful Mind": {
+      content: "Welcome to the lesson on A Truly Beautiful Mind! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Truly Beautiful Mind?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Truly Beautiful Mind?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Snake and the Mirror": {
+      content: "Welcome to the lesson on The Snake and the Mirror! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Snake and the Mirror?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Snake and the Mirror?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "My Childhood": {
+      content: "Welcome to the lesson on My Childhood! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in My Childhood?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from My Childhood?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Packing": {
+      content: "Welcome to the lesson on Packing! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Packing?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Packing?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Reach for the Top": {
+      content: "Welcome to the lesson on Reach for the Top! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Reach for the Top?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Reach for the Top?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Bond of Love": {
+      content: "Welcome to the lesson on The Bond of Love! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Bond of Love?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Bond of Love?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Kathmandu": {
+      content: "Welcome to the lesson on Kathmandu! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Kathmandu?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Kathmandu?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "If I Were You": {
+      content: "Welcome to the lesson on If I Were You! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in If I Were You?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from If I Were You?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Lost Child": {
+      content: "Welcome to the lesson on The Lost Child! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Lost Child?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Lost Child?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Adventures of Toto": {
+      content: "Welcome to the lesson on The Adventures of Toto! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Adventures of Toto?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Adventures of Toto?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Iswaran the Storyteller": {
+      content: "Welcome to the lesson on Iswaran the Storyteller! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Iswaran the Storyteller?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Iswaran the Storyteller?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "In the Kingdom of Fools": {
+      content: "Welcome to the lesson on In the Kingdom of Fools! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in In the Kingdom of Fools?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from In the Kingdom of Fools?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Happy Prince": {
+      content: "Welcome to the lesson on The Happy Prince! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Happy Prince?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Happy Prince?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Weathering the Storm in Ersama": {
+      content: "Welcome to the lesson on Weathering the Storm in Ersama! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Weathering the Storm in Ersama?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Weathering the Storm in Ersama?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Last Leaf": {
+      content: "Welcome to the lesson on The Last Leaf! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Last Leaf?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Last Leaf?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A House Is Not a Home": {
+      content: "Welcome to the lesson on A House Is Not a Home! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A House Is Not a Home?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A House Is Not a Home?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Accidental Tourist": {
+      content: "Welcome to the lesson on The Accidental Tourist! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Accidental Tourist?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Accidental Tourist?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Beggar": {
+      content: "Welcome to the lesson on The Beggar! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Beggar?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Beggar?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "दो बैलों की कथा": {
+      content: "Welcome to the lesson on दो बैलों की कथा! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in दो बैलों की कथा?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from दो बैलों की कथा?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "ल्हासा की ओर": {
+      content: "Welcome to the lesson on ल्हासा की ओर! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in ल्हासा की ओर?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from ल्हासा की ओर?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "उपभोक्तावाद की संस्कृति": {
+      content: "Welcome to the lesson on उपभोक्तावाद की संस्कृति! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in उपभोक्तावाद की संस्कृति?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from उपभोक्तावाद की संस्कृति?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "साँवले सपनों की याद": {
+      content: "Welcome to the lesson on साँवले सपनों की याद! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in साँवले सपनों की याद?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from साँवले सपनों की याद?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया": {
+      content: "Welcome to the lesson on नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "प्रेमचंद के फटे जूते": {
+      content: "Welcome to the lesson on प्रेमचंद के फटे जूते! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in प्रेमचंद के फटे जूते?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from प्रेमचंद के फटे जूते?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "मेरे बचपन के दिन": {
+      content: "Welcome to the lesson on मेरे बचपन के दिन! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in मेरे बचपन के दिन?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from मेरे बचपन के दिन?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "एक कुत्ता और एक मैना": {
+      content: "Welcome to the lesson on एक कुत्ता और एक मैना! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in एक कुत्ता और एक मैना?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from एक कुत्ता और एक मैना?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "साखियाँ एवं सबद": {
+      content: "Welcome to the lesson on साखियाँ एवं सबद! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in साखियाँ एवं सबद?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from साखियाँ एवं सबद?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "वाख": {
+      content: "Welcome to the lesson on वाख! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in वाख?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from वाख?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "सवैया": {
+      content: "Welcome to the lesson on सवैया! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in सवैया?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from सवैया?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "कैदी और कोकिला": {
+      content: "Welcome to the lesson on कैदी और कोकिला! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in कैदी और कोकिला?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from कैदी और कोकिला?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "ग्राम श्री": {
+      content: "Welcome to the lesson on ग्राम श्री! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in ग्राम श्री?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from ग्राम श्री?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "चंद्र गहना से लौटती बेर": {
+      content: "Welcome to the lesson on चंद्र गहना से लौटती बेर! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in चंद्र गहना से लौटती बेर?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from चंद्र गहना से लौटती बेर?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "मेघ आए": {
+      content: "Welcome to the lesson on मेघ आए! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in मेघ आए?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from मेघ आए?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "यमराज की दिशा": {
+      content: "Welcome to the lesson on यमराज की दिशा! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in यमराज की दिशा?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from यमराज की दिशा?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "बच्चे काम पर जा रहे हैं": {
+      content: "Welcome to the lesson on बच्चे काम पर जा रहे हैं! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in बच्चे काम पर जा रहे हैं?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from बच्चे काम पर जा रहे हैं?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Letter to God": {
+      content: "Welcome to the lesson on A Letter to God! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Letter to God?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Letter to God?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Nelson Mandela: Long Walk to Freedom": {
+      content: "Welcome to the lesson on Nelson Mandela: Long Walk to Freedom! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Nelson Mandela: Long Walk to Freedom?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Nelson Mandela: Long Walk to Freedom?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Two Stories about Flying": {
+      content: "Welcome to the lesson on Two Stories about Flying! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Two Stories about Flying?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Two Stories about Flying?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "From the Diary of Anne Frank": {
+      content: "Welcome to the lesson on From the Diary of Anne Frank! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in From the Diary of Anne Frank?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from From the Diary of Anne Frank?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Hundred Dresses - I": {
+      content: "Welcome to the lesson on The Hundred Dresses - I! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Hundred Dresses - I?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Hundred Dresses - I?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Hundred Dresses - II": {
+      content: "Welcome to the lesson on The Hundred Dresses - II! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Hundred Dresses - II?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Hundred Dresses - II?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Glimpses of India": {
+      content: "Welcome to the lesson on Glimpses of India! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Glimpses of India?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Glimpses of India?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Mijbil the Otter": {
+      content: "Welcome to the lesson on Mijbil the Otter! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Mijbil the Otter?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Mijbil the Otter?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Madam Rides the Bus": {
+      content: "Welcome to the lesson on Madam Rides the Bus! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Madam Rides the Bus?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Madam Rides the Bus?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Sermon at Benares": {
+      content: "Welcome to the lesson on The Sermon at Benares! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Sermon at Benares?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Sermon at Benares?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Proposal": {
+      content: "Welcome to the lesson on The Proposal! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Proposal?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Proposal?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Triumph of Surgery": {
+      content: "Welcome to the lesson on A Triumph of Surgery! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Triumph of Surgery?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Triumph of Surgery?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Thief's Story": {
+      content: "Welcome to the lesson on The Thief's Story! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Thief's Story?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Thief's Story?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Midnight Visitor": {
+      content: "Welcome to the lesson on The Midnight Visitor! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Midnight Visitor?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Midnight Visitor?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Question of Trust": {
+      content: "Welcome to the lesson on A Question of Trust! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Question of Trust?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Question of Trust?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Footprints without Feet": {
+      content: "Welcome to the lesson on Footprints without Feet! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Footprints without Feet?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Footprints without Feet?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Making of a Scientist": {
+      content: "Welcome to the lesson on The Making of a Scientist! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Making of a Scientist?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Making of a Scientist?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Necklace": {
+      content: "Welcome to the lesson on The Necklace! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Necklace?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Necklace?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Hack Driver": {
+      content: "Welcome to the lesson on The Hack Driver! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Hack Driver?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Hack Driver?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Bholi": {
+      content: "Welcome to the lesson on Bholi! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Bholi?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Bholi?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Book That Saved the Earth": {
+      content: "Welcome to the lesson on The Book That Saved the Earth! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Book That Saved the Earth?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Book That Saved the Earth?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "पद (सूरदास)": {
+      content: "Welcome to the lesson on पद (सूरदास)! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in पद (सूरदास)?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from पद (सूरदास)?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "राम-लक्ष्मण-परशुराम संवाद": {
+      content: "Welcome to the lesson on राम-लक्ष्मण-परशुराम संवाद! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in राम-लक्ष्मण-परशुराम संवाद?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from राम-लक्ष्मण-परशुराम संवाद?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "सवैया और कवित्त": {
+      content: "Welcome to the lesson on सवैया और कवित्त! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in सवैया और कवित्त?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from सवैया और कवित्त?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "आत्मकथ्य": {
+      content: "Welcome to the lesson on आत्मकथ्य! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in आत्मकथ्य?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from आत्मकथ्य?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "उत्साह और अट नहीं रही है": {
+      content: "Welcome to the lesson on उत्साह और अट नहीं रही है! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in उत्साह और अट नहीं रही है?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from उत्साह और अट नहीं रही है?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "यह दंतुरित मुसकान और फसल": {
+      content: "Welcome to the lesson on यह दंतुरित मुसकान और फसल! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in यह दंतुरित मुसकान और फसल?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from यह दंतुरित मुसकान और फसल?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "छाया मत छूना": {
+      content: "Welcome to the lesson on छाया मत छूना! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in छाया मत छूना?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from छाया मत छूना?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "कन्यादान": {
+      content: "Welcome to the lesson on कन्यादान! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in कन्यादान?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from कन्यादान?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "संगतकार": {
+      content: "Welcome to the lesson on संगतकार! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in संगतकार?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from संगतकार?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "नेताजी का चश्मा": {
+      content: "Welcome to the lesson on नेताजी का चश्मा! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in नेताजी का चश्मा?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from नेताजी का चश्मा?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "बालगोबिन भगत": {
+      content: "Welcome to the lesson on बालगोबिन भगत! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in बालगोबिन भगत?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from बालगोबिन भगत?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "लखनवी अंदाज़": {
+      content: "Welcome to the lesson on लखनवी अंदाज़! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in लखनवी अंदाज़?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from लखनवी अंदाज़?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "मानवीय करुणा की दिव्या चमक": {
+      content: "Welcome to the lesson on मानवीय करुणा की दिव्या चमक! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in मानवीय करुणा की दिव्या चमक?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from मानवीय करुणा की दिव्या चमक?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "एक कहानी यह भी": {
+      content: "Welcome to the lesson on एक कहानी यह भी! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in एक कहानी यह भी?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from एक कहानी यह भी?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "स्त्री शिक्षा के विरोधी कुतर्कों का खंडन": {
+      content: "Welcome to the lesson on स्त्री शिक्षा के विरोधी कुतर्कों का खंडन! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in स्त्री शिक्षा के विरोधी कुतर्कों का खंडन?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from स्त्री शिक्षा के विरोधी कुतर्कों का खंडन?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "नौबतखाने में इबादत": {
+      content: "Welcome to the lesson on नौबतखाने में इबादत! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in नौबतखाने में इबादत?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from नौबतखाने में इबादत?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "संस्कृति": {
+      content: "Welcome to the lesson on संस्कृति! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in संस्कृति?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from संस्कृति?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+
+    "Knowing Our Numbers": {
+      content: "<p>Welcome to the exciting world of numbers! In this chapter, 'Knowing Our Numbers', we will dive deep into understanding how large numbers work and why they are so important in our everyday lives. You have already learned about basic counting and simple arithmetic, but now it's time to take a step further. We will explore how to compare really big numbers, discover the significance of place value, and learn about the differences between the Indian and International systems of numeration. By mastering these concepts, you will be able to easily read, write, and understand numbers in the millions and billions. We'll also look at how to estimate or round off numbers to make quick calculations, and even take a fun trip back in time to learn about Roman numerals. This knowledge is the foundation for all the advanced mathematics you will learn in the future, so get ready to become a true number expert!</p>",
+      quiz: [{"question":"What is the smallest 2-digit number?","options":["A. 9","B. 10","C. 11","D. 100"],"answer":"B"},{"question":"Which number is greater: 543 or 534?","options":["A. 543","B. 534","C. Both are equal","D. Cannot compare"],"answer":"A"},{"question":"What is the place value of the digit '7' in the number 273?","options":["A. 7","B. 70","C. 700","D. Ones"],"answer":"B"},{"question":"Arrange the numbers 25, 12, 48 in ascending order.","options":["A. 12, 25, 48","B. 48, 25, 12","C. 25, 12, 48","D. 12, 48, 25"],"answer":"A"},{"question":"What is the largest 3-digit number you can make using digits 1, 2, 3 (without repeating)?","options":["A. 123","B. 231","C. 321","D. 312"],"answer":"C"}],
+      lessons: [{"title":"Comparing Large Numbers","explanation":"In this lesson, you will learn the essential skill of comparing very large numbers to determine which one is greater or smaller. We will practice identifying the largest and smallest numbers in a group by carefully analyzing their place values, starting from the leftmost digits. Knowing how to quickly tell which number is bigger is an incredibly useful mathematical trick!"}]
+    },
+    "Whole Numbers": {
+      content: "Welcome to the lesson on Whole Numbers! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Whole Numbers?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Whole Numbers?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Playing With Numbers": {
+      content: "Welcome to the lesson on Playing With Numbers! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Playing With Numbers?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Playing With Numbers?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Basic Geometrical Ideas": {
+      content: "<h3><strong>Main focus: This chapter helps us understand the basic shapes, lines, and points that make up everything we see around us, from our toys to our homes!</strong></h3><p>Hello little explorers! Have you ever noticed how many different shapes are hiding in your everyday life? Your biscuit might be a circle, your book is a rectangle, and even the roof of a house looks like a triangle! Geometry is like a fun detective game where we learn about these shapes, lines, and tiny dots that create the world around us. Let's find out more about them and become shape superstars!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Point, Line Segment, Ray, and Line</li><li>Open and Closed Figures</li><li>Basic 2D Shapes (Square, Rectangle, Triangle, Circle)</li><li>Sides and Vertices (Corners)</li></ul>",
+      quiz: [{"question":"Which of these shapes has exactly three sides?","options":["A) Square","B) Circle","C) Triangle","D) Rectangle"],"answer":"C"},{"question":"What do we call a path that goes on and on forever in only one direction from a starting point?","options":["A) Line","B) Line Segment","C) Ray","D) Point"],"answer":"C"},{"question":"Which of these describes a figure that starts and ends at the same point, forming a complete boundary?","options":["A) Open figure","B) Curved line","C) Closed figure","D) Ray"],"answer":"C"},{"question":"How many corners (vertices) does a standard square shape have?","options":["A) 2","B) 3","C) 4","D) 5"],"answer":"C"},{"question":"What do we call a tiny dot that shows an exact position and has no size?","options":["A) Line segment","B) Point","C) Ray","D) Line"],"answer":"B"}],
+      lessons: [{"title":"Meet Our Shape Friends!","explanation":"Let's meet our exciting shape friends like the round Circle, the square with four equal sides, the long Rectangle, and the pointy Triangle!"},{"title":"Dots, Lines, and Beyond!","explanation":"Discover how a tiny dot is a 'point', how a line segment connects two points, how a ray goes on forever in one direction, and how a line goes on forever in both directions."},{"title":"Straight or Curvy?","explanation":"Learn to tell the difference between lines that are straight, like a ruler's edge, and lines that are curved, like a rainbow or a smile!"},{"title":"Open or Closed?","explanation":"Find out about figures that are 'open' like a gate, and 'closed' figures that are completely sealed, like a fence all around."},{"title":"Sides and Corners!","explanation":"Explore the 'sides' (edges) and 'corners' (vertices) of our shape friends and count how many each shape has!"},{"title":"Shapes Everywhere You Look!","explanation":"Look around your room, playground, or school and point out all the different shapes you can find in everyday objects!"}]
+    },
+    "Understanding Elementary Shapes": {
+      content: "<h3><strong>Main focus: Let's explore the exciting world of shapes, lines, and angles that we see all around us every day!</strong></h3><p>Hello, little mathematicians! Look around you. What do you see? A book? A clock? A ball? Everything you see has a shape! Some are flat like a drawing on paper, and some are solid like a toy block you can hold. In this chapter, we will go on an exciting adventure to discover all these amazing shapes, learn about different types of lines, and even find out about corners, which we call angles! Get ready to become super shape detectives and find mathematics hidden in plain sight!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Identifying 2D (flat) shapes like squares, circles, triangles, and rectangles.</li><li>Understanding 3D (solid) shapes like cubes, spheres, cylinders, and cones.</li><li>Learning about different types of lines: straight, curved, parallel, and perpendicular.</li><li>Discovering what angles are and their different types: right, acute, and obtuse.</li></ul>",
+      quiz: [{"question":"Which of these shapes has 3 sides and 3 corners?","options":["A) Circle","B) Square","C) Triangle","D) Rectangle"],"answer":"C"},{"question":"A football looks like which 3D shape?","options":["A) Cube","B) Sphere","C) Cylinder","D) Cone"],"answer":"B"},{"question":"The opposite edges of a ruler (when viewed lengthwise) are an example of which type of lines?","options":["A) Curved lines","B) Intersecting lines","C) Parallel lines","D) Perpendicular lines"],"answer":"C"},{"question":"Which of these objects has a right angle (a perfect L-shape corner)?","options":["A) A pointed party hat","B) An open pair of scissors","C) The corner of a closed book","D) The tip of a needle"],"answer":"C"},{"question":"How many corners (vertices) does a rectangle have?","options":["A) 2","B) 3","C) 4","D) 5"],"answer":"C"}],
+      lessons: [{"title":"Meet Our Flat Friends: 2D Shapes","explanation":"Learn about shapes you can draw on paper, like the square, circle, triangle, and rectangle, and count their sides and corners."},{"title":"Exploring Bumpy Buddies: 3D Shapes","explanation":"Discover solid shapes that you can hold, like a cube, sphere, cylinder, and cone, and see them in everyday objects."},{"title":"Drawing Lines Everywhere!","explanation":"Understand the difference between straight and curved lines, and learn about lines that go up-down (vertical), sideways (horizontal), or slant."},{"title":"Special Lines: Parallel and Perpendicular","explanation":"Find out about parallel lines that never meet, like railway tracks, and perpendicular lines that meet to form a perfect 'L' corner."},{"title":"What are Angles?","explanation":"Learn that an angle is formed when two lines meet at a point, like the corners of a room or the hands of a clock pointing to 3 o'clock."},{"title":"Types of Angles: Right, Acute, Obtuse","explanation":"Explore different kinds of angles: a 'right angle' like an 'L' shape, an 'acute angle' which is smaller, and an 'obtuse angle' which is bigger than a right angle."}]
+    },
+    "Integers": {
+      content: "Welcome to the lesson on Integers! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Integers?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Integers?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Fractions": {
+      content: "<h3><strong>Main focus: Fractions help us understand and represent parts of a whole object or group when it's divided into equal pieces.</strong></h3><p>Hey little mathematicians! Imagine you have a yummy pizza, and you want to share it fairly with your friend. What do you do? You cut it into equal pieces! Each piece is a 'part' of the whole pizza. Fractions are special numbers that tell us about these parts. They help us show how much of the pizza each person gets, or how much of a chocolate bar is left. It's all about dividing things equally and naming those parts!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Understanding a 'whole' and its 'parts'.</li><li>Dividing a whole into equal parts.</li><li>Numerator (the number of parts we have) and Denominator (the total number of equal parts).</li><li>Common fractions like half (1/2), quarter (1/4), and third (1/3).</li><li>Representing fractions using pictures and numbers.</li><li>Comparing simple fractions like 1/2 and 1/4.</li></ul>",
+      quiz: [{"question":"If you cut a cake into 4 equal pieces, and you eat 1 piece, what fraction of the cake did you eat?","options":["A. 1/2","B. 1/3","C. 1/4","D. 4/1"],"answer":"C. 1/4"},{"question":"In the fraction 3/5, what does the number '5' represent?","options":["A. The parts we have","B. The total number of equal parts","C. The whole number","D. Nothing"],"answer":"B. The total number of equal parts"},{"question":"How many 'half' pieces can you get from one whole apple?","options":["A. One","B. Two","C. Three","D. Four"],"answer":"B. Two"},{"question":"Which of these pictures shows 1/4 of a shape shaded?","options":["A. A circle with half shaded","B. A square with all parts shaded","C. A rectangle divided into 4 equal parts with 1 part shaded","D. A triangle divided into 3 equal parts with 1 part shaded"],"answer":"C. A rectangle divided into 4 equal parts with 1 part shaded"},{"question":"Which fraction represents 'one-third'?","options":["A. 1/3","B. 2/3","C. 3/1","D. 1/2"],"answer":"A. 1/3"}],
+      lessons: [{"title":"What are Fractions? Sharing Equally!","explanation":"Learn that fractions are a way to represent parts of a whole when something is divided into equal pieces, like sharing a pizza or chocolate bar fairly."},{"title":"Numerator and Denominator: The Top and Bottom Numbers","explanation":"Discover what the top number (numerator) tells us (how many parts we have) and what the bottom number (denominator) tells us (the total number of equal parts)."},{"title":"Understanding Half (1/2)","explanation":"Explore how 'half' means dividing something into two perfectly equal parts, and how we write it as 1/2."},{"title":"Understanding Quarter (1/4)","explanation":"Learn about 'quarter', which means dividing a whole into four equal parts, and how it is written as 1/4."},{"title":"Understanding Third (1/3) and Other Unit Fractions","explanation":"Understand 'one-third' as one out of three equal parts (1/3), and get introduced to other simple unit fractions like 1/5."},{"title":"Comparing Simple Fractions: Which Part is Bigger?","explanation":"Learn to compare basic fractions, like deciding if 1/2 of a cake is more than 1/4 of the same cake, often using visual aids."}]
+    },
+    "Decimals": {
+      content: "Welcome to the lesson on Decimals! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Decimals?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Decimals?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Mensuration": {
+      content: "<h3><strong>Main focus: We will learn to measure the boundary and the space inside different shapes.</strong></h3><p>Hey, little explorers! Have you ever wondered how much ribbon you need to go around a gift box, or how much paint you need to cover a wall? That's what Mensuration helps us with! It's like being a super detective who measures everything – how long, how wide, and how much space things take up. We learn to measure the 'outside' of a shape, like walking around a park, and the 'inside' of a shape, like covering a table with a cloth. It's super fun and helps us understand the world around us better!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Perimeter: The total length of the boundary of a shape.</li><li>Area: The amount of surface or space a flat shape covers.</li></ul>",
+      quiz: [{"question":"What do we measure when we find the length around a photo frame?","options":["A) Area","B) Volume","C) Perimeter","D) Weight"],"answer":"C"},{"question":"If you want to put a carpet in your room, what part of the room do you need to measure?","options":["A) Perimeter","B) Area","C) Height","D) Depth"],"answer":"B"},{"question":"Which unit would you use to measure the length of your pencil?","options":["A) Kilogram","B) Litre","C) Centimeter","D) Hour"],"answer":"C"},{"question":"A square garden has each side 5 meters long. What is the total length of its boundary (perimeter)?","options":["A) 5 meters","B) 10 meters","C) 15 meters","D) 20 meters"],"answer":"D"},{"question":"Imagine a rectangle made of 6 small squares. What does the number 6 tell us about the rectangle?","options":["A) Its perimeter","B) Its area","C) Its height","D) Its width"],"answer":"B"}],
+      lessons: [{"title":"What is Mensuration?","explanation":"This lesson introduces the exciting world of measuring things all around us."},{"title":"Measuring Length","explanation":"Learn how to measure how long things are using simple tools like a ruler and units like centimeters and meters."},{"title":"Shapes All Around Us","explanation":"Discover different 2D shapes like squares, rectangles, and triangles, and where we see them every day."},{"title":"Understanding Perimeter","explanation":"Explore the concept of 'boundary' by measuring the total length around the edges of different shapes."},{"title":"Understanding Area","explanation":"Learn about the 'space inside' a shape by counting squares or imagining how much surface it covers."},{"title":"Real-Life Measuring Fun","explanation":"See how measuring perimeter and area helps us in daily life, from making a garden to tiling a floor."}]
+    },
+    "Algebra": {
+      content: "<h3><strong>Main focus: Algebra helps us discover secret numbers hidden in math puzzles!</strong></h3><p>Have you ever played a game where you have to find the missing piece? Algebra is just like that, but with numbers! Sometimes, in math problems, a number is hiding. We use special shapes like a square or a star, or even letters like 'x' or 'y', to stand for that secret number. Our job is to be number detectives and figure out what number is hiding! It's a fun way to solve puzzles and understand how numbers work together.</p><h3><strong>Key Concepts:</strong></h3><ul><li>Finding missing numbers in equations.</li><li>Using symbols (like shapes or letters) to represent unknown numbers.</li><li>Understanding simple patterns and relationships between numbers.</li></ul>",
+      quiz: [{"question":"What number goes in the box to make the statement true? 5 + [ ] = 9","options":["3","4","5","14"],"answer":"B"},{"question":"If a star (⭐) stands for 6, what is ⭐ - 2?","options":["8","4","3","6"],"answer":"B"},{"question":"If 'x' is a missing number and x + 3 = 10, what is 'x'?","options":["7","13","3","10"],"answer":"A"},{"question":"Look at the pattern: 3, 6, 9, [ ], 15. What is the missing number?","options":["10","11","12","13"],"answer":"C"},{"question":"You have 'y' balloons. Your friend gives you 2 more. You now have y + 2 balloons. If y = 7, how many balloons do you have in total?","options":["9","7","2","14"],"answer":"A"}],
+      lessons: [{"title":"What's the Missing Number?","explanation":"We'll start by finding the number that completes simple addition or subtraction sentences."},{"title":"Shapes as Placeholders","explanation":"Learn to use simple shapes like a square or a triangle to stand for a number we don't know yet."},{"title":"Meet the Number Letters (Variables)","explanation":"Discover how letters like 'x', 'y', or 'a' can also be used to represent a hidden number."},{"title":"Patterns, Patterns Everywhere!","explanation":"Explore how algebra helps us find the rule that creates a number pattern, like 2, 4, 6..."},{"title":"Balancing Act: What is Equal?","explanation":"Understand that an equation means both sides of the '=' sign must have the same value, just like a balanced scale."},{"title":"Algebra in Everyday Puzzles","explanation":"Solve simple real-life problems by finding missing numbers using our new algebra skills."}]
+    },
+    "Ratio and Proportion": {
+      content: "Welcome to the lesson on Ratio and Proportion! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Ratio and Proportion?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Ratio and Proportion?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Components of Food": {
+      content: "Welcome to the lesson on Components of Food! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Components of Food?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Components of Food?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Sorting Materials into Groups": {
+      content: "<h3><strong>Main focus: We learn to group different things together based on their properties like how they look, feel, and what they are used for.</strong></h3><p>Have you ever helped your parents sort laundry, or put your toys back in their right boxes? That's exactly what 'sorting materials into groups' means! We look at different things around us, like a soft teddy bear, a hard stone, or a shiny spoon. We can put things that are similar together. This helps us to find things easily, keep our surroundings tidy, and understand the world better. It's like putting all your pencils in one box and all your crayons in another!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Grouping objects based on their properties (e.g., shape, colour, texture, use).</li><li>Understanding that materials have different characteristics like hard/soft, rough/smooth, shiny/dull.</li></ul>",
+      quiz: [{"question":"Which of these objects is made of a 'soft' material?","options":["Cotton ball","Stone","Wooden table","Iron rod"],"answer":"Cotton ball"},{"question":"If you sort things by their 'colour', which group would a red apple and a red car belong to?","options":["Food items","Vehicles","Red coloured items","Round items"],"answer":"Red coloured items"},{"question":"Why do we sort our clothes into different piles (e.g., shirts, pants, socks)?","options":["To make them dirty","To lose them easily","To find them quickly when needed","To make more mess"],"answer":"To find them quickly when needed"},{"question":"Which of these materials is usually 'shiny'?","options":["Wood","Plastic bottle","Metal spoon","Cloth towel"],"answer":"Metal spoon"},{"question":"What is the main reason to group similar things together?","options":["To keep them organized and easy to find","To make them disappear","To make it harder to find them","To mix everything up"],"answer":"To keep them organized and easy to find"}],
+      lessons: [{"title":"What is Sorting?","explanation":"Sorting means putting things into groups based on how they are alike or different. It helps us keep things tidy and understand them better."},{"title":"Sorting by How Things Look","explanation":"We can group objects by their colour, shape, or size, like putting all green toys together or all square blocks in one pile."},{"title":"Sorting by How Things Feel","explanation":"We can group things by touch, like separating rough stones from smooth pebbles, or soft cotton from hard wood."},{"title":"Sorting by What They Are Used For","explanation":"Imagine grouping all your eating spoons together, or all your drawing pencils in another group, based on their use."},{"title":"Sorting by Material","explanation":"We can sort objects by what they are made of, such as putting all wooden items together and all plastic items together."},{"title":"Why is Sorting Important?","explanation":"Sorting helps us keep our homes, classrooms, and even shops organized, making it easy to find what we need and learn new things."}]
+    },
+    "Separation of Substances": {
+      content: "<h3><strong>Main focus: Learning how to separate different things from each other in easy and fun ways.</strong></h3><p>Have you ever seen your mother pick out small stones from rice, or sieve flour to make rotis? We often need to separate things that are mixed together. Sometimes we want to remove something bad or unwanted, and sometimes we want to get the useful part out. In this chapter, we will discover different simple methods to separate various substances, making our food cleaner and our lives easier!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Handpicking: Separating by picking with hands.</li><li>Sieving: Separating using a sieve for different sizes.</li><li>Winnowing: Separating lighter particles using wind.</li><li>Filtration: Separating tiny particles from liquids using a filter.</li></ul>",
+      quiz: [{"question":"Which method is best for separating small stones from rice?","options":["Handpicking","Sieving","Winnowing","Filtering"],"answer":"Handpicking"},{"question":"What do we use to separate flour from small lumps?","options":["A spoon","A sieve","Our hands","A fan"],"answer":"A sieve"},{"question":"Farmers use 'winnowing' to separate lighter husk from heavier grains. What helps them do this?","options":["Water","Fire","Wind","A magnet"],"answer":"Wind"},{"question":"When you make tea, you use a strainer to separate tea leaves from the tea. What is this method called?","options":["Handpicking","Sieving","Winnowing","Filtration"],"answer":"Filtration"},{"question":"Why do we need to separate substances?","options":["To remove unwanted things","To get useful things","Both A and B","To make a mess"],"answer":"Both A and B"}],
+      lessons: [{"title":"Why Do We Separate Things?","explanation":"Learn why it's important to separate things in our daily lives, like cleaning food or getting pure ingredients. (EVS focus: cleanliness, safety)"},{"title":"Handpicking: Separating with Our Hands","explanation":"Discover how we use our hands to separate larger unwanted items, such as stones from pulses or peanuts from mixed snacks. (Logic focus: observation and sorting)"},{"title":"Sieving: Separating by Size","explanation":"Explore how sieving helps us separate things based on their size, like sifting flour or sand. (Mathematics focus: understanding size differences, comparison)"},{"title":"Winnowing: Using Wind to Separate","explanation":"Understand how farmers use the wind to separate lighter husks from heavier grains, a clever traditional method. (EVS focus: farming practices, nature's help)"},{"title":"Filtration and Decantation: Separating Liquids and Solids","explanation":"Learn about using a filter (like a tea strainer) to separate tiny particles from liquids, and how to pour out clear liquid carefully when solids settle. (EVS focus: clean water, preparing drinks)"},{"title":"Separation All Around Us: Everyday Examples","explanation":"Look at many simple examples of separation that we see and do every day at home and school. (EVS focus: practical application, connecting to surroundings)"}]
+    },
+    "Getting to Know Plants": {
+      content: "<h3><strong>Main focus: Learning about the different parts of plants and how each part helps the plant live and grow.</strong></h3><p>Look around you! Do you see green things growing everywhere? Those are plants! Plants are amazing living things, just like us, but they usually stay rooted in one place. They come in many shapes and sizes – some are tiny like grass, and some are huge like big trees. In this chapter, we will learn about their different parts, like roots, stems, leaves, and flowers, and discover what each part does to help the plant stay healthy and happy! Understanding plants helps us appreciate nature even more.</p><h3><strong>Key Concepts:</strong></h3><ul><li>Plants have different parts, such as roots, stem, leaves, and flowers, and each part has a special job.</li><li>Plants are living things that need sunlight, water, and air to make their own food and are essential for life on Earth.</li></ul>",
+      quiz: [{"question":"Which part of the plant usually grows under the ground?","options":["Leaves","Flowers","Roots","Stem"],"answer":"C"},{"question":"Which part of the plant helps it stand straight and carries water to all other parts?","options":["Roots","Stem","Leaves","Flowers"],"answer":"B"},{"question":"Which part of the plant is often called the 'food factory' because it makes food for the plant?","options":["Stem","Roots","Leaves","Fruits"],"answer":"C"},{"question":"What beautiful part of a plant often turns into a fruit?","options":["Roots","Stem","Leaves","Flowers"],"answer":"D"},{"question":"Are plants living things or non-living things?","options":["Living things","Non-living things","Sometimes living, sometimes non-living","Cannot say"],"answer":"A"}],
+      lessons: [{"title":"What are Plants?","explanation":"Plants are living things that grow all around us, from tiny grass to tall trees. They are an important part of our world."},{"title":"Main Parts of a Plant","explanation":"Plants have several main parts: roots, stem, leaves, flowers, and sometimes fruits. Each part has a unique job to do."},{"title":"Roots: The Hidden Anchor","explanation":"Roots usually grow underground, holding the plant firmly in the soil and soaking up water and nutrients from it."},{"title":"Stem: The Strong Supporter","explanation":"The stem stands tall, supporting the leaves, flowers, and fruits, and acts like a pipeline carrying water and food to all parts."},{"title":"Leaves: The Food Makers","explanation":"Leaves are mostly green and are like tiny kitchens where plants make their own food using sunlight, air, and water."},{"title":"Flowers & Fruits: Seeds for New Life","explanation":"Flowers are often colorful and fragrant, and they develop into fruits, which protect the seeds for new plants."}]
+    },
+    "Body Movements": {
+      content: "<h3><strong>Main focus: Understanding how our body parts move and why it's important for daily activities.</strong></h3><p>Our body is like a super machine! It helps us do so many wonderful things every day, like playing with friends, running in the park, writing in our books, and even eating yummy food. All these actions need our body parts to move. Let's explore together how our bones, muscles, and special bending spots called joints work as a team to help us move and stay active!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Our body has many parts that can move in different ways.</li><li>Bones give our body shape and support, and joints help us bend and rotate.</li><li>Muscles help our bones move.</li><li>Different animals move in different ways to find food and stay safe.</li><li>Regular movement and exercise keep our body strong and healthy.</li></ul>",
+      quiz: [{"question":"Which part of your body helps you bend your leg?","options":["Elbow","Knee","Wrist","Neck"],"answer":"Knee"},{"question":"What is the hard, inner framework of our body called?","options":["Muscles","Skin","Bones","Hair"],"answer":"Bones"},{"question":"Which animal uses its wings to fly?","options":["Fish","Snake","Bird","Dog"],"answer":"Bird"},{"question":"What helps our bones move smoothly at bending points?","options":["Muscles","Skin","Blood","Joints"],"answer":"Joints"},{"question":"Why is it important to play games and move our bodies?","options":["To become strong and healthy","To sleep more","To watch more TV","To sit still always"],"answer":"To become strong and healthy"}],
+      lessons: [{"title":"Our Amazing Moving Body!","explanation":"Discover how incredible our bodies are and all the different ways we can move our arms, legs, head, and fingers to do everyday things."},{"title":"Meet Your Moving Parts","explanation":"Let's identify the main parts of our body that move, such as your arms, legs, neck, and waist, and understand what each part helps you do."},{"title":"Bones: Our Body's Frame","explanation":"Learn that bones are like the strong pillars inside our body that give us shape and help us stand tall. They are very hard!"},{"title":"Joints: Where We Bend","explanation":"Find out about 'joints' – the special places where two bones meet, allowing us to bend our knees, elbows, and fingers easily."},{"title":"How Animals Move Differently","explanation":"Explore how various animals, like birds, fish, snakes, and monkeys, move in their own unique ways to travel and find food."},{"title":"Keeping Our Body Strong and Active","explanation":"Understand why playing, running, and exercising regularly are important to keep our bones, muscles, and joints healthy and ready for action."}]
+    },
+    "The Living Organisms and Their Surroundings": {
+      content: "Welcome to the lesson on The Living Organisms and Their Surroundings! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Living Organisms and Their Surroundings?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Living Organisms and Their Surroundings?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Motion and Measurement of Distances": {
+      content: "<h3><strong>Main focus: Understanding how things move and learning simple ways to measure how far they travel.</strong></h3><p>Have you ever seen a bird fly or a car drive? Everything around us moves, and when things move, they go from one place to another. This is called motion! And sometimes, we need to know how far something has moved or how long something is. To do this, we measure distances using special tools and words. It's like finding out how many steps it takes to get from your bed to the door!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Motion: When an object changes its position over time.</li><li>Measurement: The process of finding the size or quantity of something, like distance or length.</li></ul>",
+      quiz: [{"question":"What is it called when something changes its position?","options":["Motion","Still","Sleep","Eat"],"answer":"A"},{"question":"Which of these is NOT an example of motion?","options":["A car driving","A ball rolling","A tree standing still","A child running"],"answer":"C"},{"question":"What do we use to find out how long a table is?","options":["A spoon","A measuring tape","A book","A crayon"],"answer":"B"},{"question":"What is a standard unit for measuring length or distance?","options":["Cup","Kilogram","Metre","Hour"],"answer":"C"},{"question":"If you walk from your home to the park, what are you doing?","options":["Measuring distance","Playing a game","Sleeping","Sitting"],"answer":"A"}],
+      lessons: [{"title":"What is Motion?","explanation":"Learn that motion means changing place, like a bird flying or a ball rolling."},{"title":"Seeing Motion Everywhere","explanation":"Observe different things moving around us, from animals to vehicles and even ourselves."},{"title":"Why Do We Need to Measure?","explanation":"Understand that measurement helps us know how far, how long, or how tall things are for daily activities."},{"title":"How We Measure Short Distances","explanation":"Discover tools like a ruler or measuring tape to measure short lengths like a pencil or a book."},{"title":"Standard Units of Measurement","explanation":"Learn about standard units like centimetre and metre that help everyone understand measurements easily."},{"title":"Measuring Longer Distances","explanation":"Explore how we measure longer distances, like the distance between two cities, using units like kilometres."}]
+    },
+    "Light Shadows and Reflections": {
+      content: "<h3><strong>Main focus: Discovering the magic of light, how shadows are made, and how light bounces back!</strong></h3><p>Hello little explorers! Have you ever wondered how you see the beautiful world around you? It's all because of 'light'! Light is like a superpower that helps our eyes see everything, from your colorful toys to the big blue sky. But light also plays hide-and-seek, making dark shapes called shadows when something blocks its path. And sometimes, light loves to bounce back, just like a ball off a wall, which we call reflection!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Light helps us see everything around us.</li><li>Shadows are dark shapes formed when an object blocks light.</li><li>Objects can be transparent (light passes through), translucent (some light passes), or opaque (no light passes).</li><li>Reflection is when light bounces off a shiny surface, like a mirror.</li></ul>",
+      quiz: [{"question":"What helps us see colors and objects in the daytime?","options":["Light","Sound","Wind","Smell"],"answer":"A"},{"question":"What do you call the dark shape formed when an object blocks light?","options":["Rainbow","Shadow","Cloud","Star"],"answer":"B"},{"question":"Which of these objects is 'transparent' and lets light pass through easily?","options":["A wooden block","A brick wall","A clear glass window","A thick book"],"answer":"C"},{"question":"Which of these is a natural source of light?","options":["Torch","Candle","Sun","Bulb"],"answer":"C"},{"question":"When light bounces off a shiny surface like a mirror, what is it called?","options":["Reflection","Absorption","Bending","Shining"],"answer":"A"}],
+      lessons: [{"title":"What is Light? - Our World Illuminator","explanation":"Light is energy that helps us see everything around us. Without light, our world would be completely dark!"},{"title":"Sources of Light - Who Gives us Light?","explanation":"Some things like the Sun and stars give us light naturally. Others, like bulbs and torches, are made by humans to give us light."},{"title":"Transparent, Translucent, and Opaque - Light's Different Paths","explanation":"Objects can let light pass through completely (transparent like glass), partially (translucent like frosted glass), or not at all (opaque like a wall)."},{"title":"How Shadows are Made - Light's Block Party!","explanation":"When an opaque object stands in the path of light, it blocks the light and forms a dark shape behind it, which is called a shadow."},{"title":"Playing with Shadows - Fun with Shapes","explanation":"Shadows can change in size and shape depending on where the light source is and how far or close the object is from the light."},{"title":"Reflections - Light Bounces Back!","explanation":"When light hits a smooth, shiny surface, it bounces back, just like a ball. This bouncing back of light is called reflection, and it's how we see ourselves in a mirror!"}]
+    },
+    "Electricity and Circuits": {
+      content: "<h3><strong>Main focus: Understanding what electricity is, how it helps us, and how to use it safely in our daily lives.</strong></h3><p>Imagine a tiny, magical power that makes your fan spin, your TV show cartoons, and your flashlight glow! This amazing power is called electricity. It flows through special paths, like tiny invisible roads, to make our gadgets and machines work. Learning about electricity is super fun, but it's also very important to know how to use it carefully so we stay safe.</p><h3><strong>Key Concepts:</strong></h3><ul><li>What is Electricity and where does it come from (like batteries)?</li><li>What is an Electric Circuit (the path electricity takes)?</li><li>Why is it important to be Safe with Electricity?</li></ul>",
+      quiz: [{"question":"Which of these things uses electricity to work?","options":["A. A bicycle","B. A tree","C. A television","D. A rock"],"answer":"C. A television"},{"question":"What is a small source of electricity often found in toys?","options":["A. A stone","B. A battery","C. A flower","D. A pencil"],"answer":"B. A battery"},{"question":"What do we call the complete path through which electricity flows?","options":["A. A road","B. A river","C. A circuit","D. A garden"],"answer":"C. A circuit"},{"question":"What should you NEVER do with electric wires?","options":["A. Look at them","B. Draw them","C. Touch them with wet hands","D. Learn about them"],"answer":"C. Touch them with wet hands"},{"question":"If an electric bulb is not glowing, what could be a reason?","options":["A. The switch is OFF","B. The wires are connected properly","C. The battery is new","D. The circuit is complete"],"answer":"A. The switch is OFF"}],
+      lessons: [{"title":"1. What is Electricity?","explanation":"Let's explore the invisible energy that powers our homes and toys, making everything light up and move!"},{"title":"2. Meet the Battery!","explanation":"Discover how small batteries act like tiny power houses, giving energy to your remote controls and flashlights."},{"title":"3. Making a Bulb Glow","explanation":"Learn the simple magic of connecting a battery, wires, and a bulb to create light!"},{"title":"4. The Path of Electricity: A Circuit Story","explanation":"Understand that electricity needs a complete, unbroken path, like a closed loop, to flow and make things work."},{"title":"5. Safety First with Electricity!","explanation":"Important rules to remember to keep yourself and your family safe around electrical gadgets and wires."},{"title":"6. Conductors and Insulators: Electric Friends and Blockers","explanation":"Find out which materials allow electricity to pass easily and which ones stop it, keeping us safe."}]
+    },
+    "Fun with Magnets": {
+      content: "<h3><strong>Main focus: Let's explore the amazing world of magnets and discover what they are, what they attract, and how they work!</strong></h3><p>Hello, young explorers! Have you ever seen something pull a tiny pin or a paperclip without touching it directly? That's the magic of a magnet! Magnets are special objects that can attract things made of iron, steel, nickel, and cobalt. They have a secret power to pull these things close, almost like an invisible hand. We find magnets in many places around us, helping us in different ways. Let's have some fun learning about these fascinating magnetic friends!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Magnets attract certain materials like iron and steel.</li><li>Magnets have two ends called poles (North and South).</li><li>Opposite poles of magnets attract each other, while similar poles push each other away.</li><li>Magnets are used in many everyday objects.</li></ul>",
+      quiz: [{"question":"Which of these things will a magnet attract?","options":["A. A plastic toy","B. A wooden block","C. A steel spoon","D. A paper leaf"],"answer":"C"},{"question":"What are the two ends of a magnet called?","options":["A. Heads and Tails","B. North and South Poles","C. Left and Right Sides","D. Top and Bottom"],"answer":"B"},{"question":"What happens when you bring the North pole of one magnet close to the North pole of another magnet?","options":["A. They stick together","B. They push each other away","C. Nothing happens","D. They spin around"],"answer":"B"},{"question":"Which of these is NOT attracted by a magnet?","options":["A. An iron nail","B. A safety pin","C. A silver coin","D. A refrigerator door"],"answer":"C"},{"question":"Where can you often find a magnet being used in your house?","options":["A. Inside a pencil box","B. On a refrigerator door","C. Under your bed","D. In a water bottle"],"answer":"B"}],
+      lessons: [{"title":"What is a Magnet?","explanation":"Learn that a magnet is a special rock or object that can pull certain things towards it, like magic! It has an invisible force."},{"title":"Magnetic and Non-Magnetic Materials","explanation":"Discover which materials (like iron and steel) are attracted to magnets and which ones (like wood, plastic, paper) are not."},{"title":"The Poles of a Magnet","explanation":"Understand that every magnet has two special ends called the North pole and the South pole, where its pulling power is strongest."},{"title":"Attraction and Repulsion","explanation":"Explore how opposite poles (North-South) pull each other, and similar poles (North-North or South-South) push each other away."},{"title":"Finding Directions with Magnets","explanation":"Learn that a freely hanging magnet always points in the North-South direction, helping us to find our way, like a simple compass."},{"title":"Magnets in Our Daily Life","explanation":"See how magnets are used in many things around us, like on refrigerator doors, in toy trains, and in pencil boxes."}]
+    },
+    "Air Around Us": {
+      content: "<h3><strong>Main focus: Air is all around us, even if we can't see it, and it's super important for all living things and many activities we do every day!</strong></h3><p>Imagine you're playing outside, and suddenly your hair moves, or a leaf dances on a tree – that's air! We can't see air with our eyes, but we can feel it. Air is like an invisible blanket covering our entire Earth, and it's everywhere, inside our homes, outside, and even in our balloons. Without air, nothing could live, and many fun things like flying kites or blowing bubbles wouldn't be possible. Let's explore the amazing world of air!</p><h3><strong>Key Concepts:</strong></h3><ul><li>Air is all around us but invisible.</li><li>All living things need air to breathe and survive.</li><li>Air helps many things move and helps us do daily activities.</li></ul>",
+      quiz: [{"question":"What can we feel around us but cannot see?","options":["Water","Air","Soil","Stones"],"answer":"B"},{"question":"Why is air important for humans and animals?","options":["To play","To breathe","To eat","To sleep"],"answer":"B"},{"question":"Which of these needs air to fly in the sky?","options":["A rock","A book","A kite","A chair"],"answer":"C"},{"question":"What happens if there is no air?","options":["We can see more","Everything becomes quiet","Living things cannot survive","It gets very hot"],"answer":"C"},{"question":"Which action helps keep the air clean?","options":["Planting more trees","Burning garbage","Using lots of cars","Factories releasing smoke"],"answer":"A"}],
+      lessons: [{"title":"What is Air?","explanation":"Air is an invisible gas mixture that surrounds us, which we cannot see but can feel. It's everywhere, even though it's hidden from our eyes!"},{"title":"Feeling the Air Around Us","explanation":"We can feel air when it blows as wind, when we blow bubbles, or when a fan is on. It helps dry our clothes and makes leaves rustle."},{"title":"Air for Living Things","explanation":"Every living being, including humans, animals, and plants, needs air to breathe and stay alive. Without air, life on Earth would not be possible."},{"title":"Air Helps Things Move","explanation":"Air (or wind) can make things move, like kites flying high, sailboats gliding on water, and windmills spinning to make electricity."},{"title":"Air and Burning","explanation":"Air is essential for anything to burn, like a candle flame or a bonfire. If there's no air, the fire goes out."},{"title":"Keeping Our Air Clean","explanation":"It's important to keep our air clean by planting trees and reducing pollution from vehicles and factories, because clean air makes us healthy and happy."}]
+    },
+    "What Where How and When?": {
+      content: "Welcome to the lesson on What Where How and When?! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in What Where How and When??", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from What Where How and When??", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "From Hunting-Gathering to Growing Food": {
+      content: "Welcome to the lesson on From Hunting-Gathering to Growing Food! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in From Hunting-Gathering to Growing Food?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from From Hunting-Gathering to Growing Food?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "In the Earliest Cities": {
+      content: "Welcome to the lesson on In the Earliest Cities! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in In the Earliest Cities?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from In the Earliest Cities?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "What Books and Burials Tell Us": {
+      content: "Welcome to the lesson on What Books and Burials Tell Us! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in What Books and Burials Tell Us?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from What Books and Burials Tell Us?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Kingdoms Kings and an Early Republic": {
+      content: "Welcome to the lesson on Kingdoms Kings and an Early Republic! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Kingdoms Kings and an Early Republic?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Kingdoms Kings and an Early Republic?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "New Questions and Ideas": {
+      content: "Welcome to the lesson on New Questions and Ideas! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in New Questions and Ideas?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from New Questions and Ideas?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "From a Kingdom to an Empire": {
+      content: "Welcome to the lesson on From a Kingdom to an Empire! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in From a Kingdom to an Empire?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from From a Kingdom to an Empire?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Villages Towns and Trade": {
+      content: "Welcome to the lesson on Villages Towns and Trade! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Villages Towns and Trade?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Villages Towns and Trade?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "New Empires and Kingdoms": {
+      content: "Welcome to the lesson on New Empires and Kingdoms! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in New Empires and Kingdoms?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from New Empires and Kingdoms?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Buildings Paintings and Books": {
+      content: "Welcome to the lesson on Buildings Paintings and Books! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Buildings Paintings and Books?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Buildings Paintings and Books?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Earth in the Solar System": {
+      content: "Welcome to the lesson on The Earth in the Solar System! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Earth in the Solar System?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Earth in the Solar System?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Globe: Latitudes and Longitudes": {
+      content: "Welcome to the lesson on Globe: Latitudes and Longitudes! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Globe: Latitudes and Longitudes?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Globe: Latitudes and Longitudes?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Motions of the Earth": {
+      content: "Welcome to the lesson on Motions of the Earth! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Motions of the Earth?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Motions of the Earth?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Maps": {
+      content: "Welcome to the lesson on Maps! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Maps?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Maps?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Major Domains of the Earth": {
+      content: "Welcome to the lesson on Major Domains of the Earth! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Major Domains of the Earth?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Major Domains of the Earth?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Our Country - India": {
+      content: "Welcome to the lesson on Our Country - India! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Our Country - India?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Our Country - India?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Understanding Diversity": {
+      content: "Welcome to the lesson on Understanding Diversity! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Understanding Diversity?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Understanding Diversity?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Diversity and Discrimination": {
+      content: "Welcome to the lesson on Diversity and Discrimination! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Diversity and Discrimination?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Diversity and Discrimination?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "What is Government?": {
+      content: "Welcome to the lesson on What is Government?! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in What is Government??", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from What is Government??", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Panchayati Raj": {
+      content: "Welcome to the lesson on Panchayati Raj! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Panchayati Raj?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Panchayati Raj?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Rural Administration": {
+      content: "Welcome to the lesson on Rural Administration! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Rural Administration?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Rural Administration?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Urban Administration": {
+      content: "Welcome to the lesson on Urban Administration! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Urban Administration?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Urban Administration?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Rural Livelihoods": {
+      content: "Welcome to the lesson on Rural Livelihoods! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Rural Livelihoods?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Rural Livelihoods?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Urban Livelihoods": {
+      content: "Welcome to the lesson on Urban Livelihoods! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Urban Livelihoods?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Urban Livelihoods?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Integers": {
+      content: "Welcome to the lesson on Integers! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Integers?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Integers?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Fractions and Decimals": {
+      content: "Welcome to the lesson on Fractions and Decimals! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Fractions and Decimals?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Fractions and Decimals?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Simple Equations": {
+      content: "Welcome to the lesson on Simple Equations! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Simple Equations?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Simple Equations?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Lines and Angles": {
+      content: "Welcome to the lesson on Lines and Angles! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Lines and Angles?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Lines and Angles?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Triangle and its Properties": {
+      content: "Welcome to the lesson on The Triangle and its Properties! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Triangle and its Properties?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Triangle and its Properties?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Congruence of Triangles": {
+      content: "Welcome to the lesson on Congruence of Triangles! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Congruence of Triangles?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Congruence of Triangles?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Comparing Quantities": {
+      content: "Welcome to the lesson on Comparing Quantities! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Comparing Quantities?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Comparing Quantities?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Rational Numbers": {
+      content: "Welcome to the lesson on Rational Numbers! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Rational Numbers?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Rational Numbers?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Practical Geometry": {
+      content: "Welcome to the lesson on Practical Geometry! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Practical Geometry?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Practical Geometry?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Perimeter and Area": {
+      content: "Welcome to the lesson on Perimeter and Area! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Perimeter and Area?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Perimeter and Area?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Algebraic Expressions": {
+      content: "Welcome to the lesson on Algebraic Expressions! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Algebraic Expressions?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Algebraic Expressions?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Exponents and Powers": {
+      content: "Welcome to the lesson on Exponents and Powers! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Exponents and Powers?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Exponents and Powers?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Symmetry": {
+      content: "Welcome to the lesson on Symmetry! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Symmetry?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Symmetry?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Visualising Solid Shapes": {
+      content: "Welcome to the lesson on Visualising Solid Shapes! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Visualising Solid Shapes?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Visualising Solid Shapes?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Nutrition in Plants": {
+      content: "Welcome to the lesson on Nutrition in Plants! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Nutrition in Plants?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Nutrition in Plants?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Nutrition in Animals": {
+      content: "Welcome to the lesson on Nutrition in Animals! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Nutrition in Animals?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Nutrition in Animals?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Heat": {
+      content: "Welcome to the lesson on Heat! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Heat?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Heat?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Acids Bases and Salts": {
+      content: "Welcome to the lesson on Acids Bases and Salts! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Acids Bases and Salts?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Acids Bases and Salts?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Physical and Chemical Changes": {
+      content: "Welcome to the lesson on Physical and Chemical Changes! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Physical and Chemical Changes?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Physical and Chemical Changes?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Respiration in Organisms": {
+      content: "Welcome to the lesson on Respiration in Organisms! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Respiration in Organisms?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Respiration in Organisms?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Transportation in Animals and Plants": {
+      content: "Welcome to the lesson on Transportation in Animals and Plants! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Transportation in Animals and Plants?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Transportation in Animals and Plants?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Reproduction in Plants": {
+      content: "Welcome to the lesson on Reproduction in Plants! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Reproduction in Plants?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Reproduction in Plants?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Motion and Time": {
+      content: "Welcome to the lesson on Motion and Time! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Motion and Time?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Motion and Time?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Electric Current and its Effects": {
+      content: "Welcome to the lesson on Electric Current and its Effects! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Electric Current and its Effects?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Electric Current and its Effects?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Light": {
+      content: "Welcome to the lesson on Light! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Light?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Light?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Forests: Our Lifeline": {
+      content: "Welcome to the lesson on Forests: Our Lifeline! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Forests: Our Lifeline?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Forests: Our Lifeline?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Wastewater Story": {
+      content: "Welcome to the lesson on Wastewater Story! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Wastewater Story?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Wastewater Story?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Introduction: Tracing Changes Through a Thousand Years": {
+      content: "Welcome to the lesson on Introduction: Tracing Changes Through a Thousand Years! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Introduction: Tracing Changes Through a Thousand Years?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Introduction: Tracing Changes Through a Thousand Years?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "New Kings and Kingdoms": {
+      content: "Welcome to the lesson on New Kings and Kingdoms! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in New Kings and Kingdoms?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from New Kings and Kingdoms?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Delhi: 12th to 15th Century": {
+      content: "Welcome to the lesson on Delhi: 12th to 15th Century! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Delhi: 12th to 15th Century?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Delhi: 12th to 15th Century?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Mughals (16th to 17th Century)": {
+      content: "Welcome to the lesson on The Mughals (16th to 17th Century)! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Mughals (16th to 17th Century)?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Mughals (16th to 17th Century)?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Rulers and Buildings": {
+      content: "Welcome to the lesson on Rulers and Buildings! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Rulers and Buildings?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Rulers and Buildings?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Towns Traders and Craftspersons": {
+      content: "Welcome to the lesson on Towns Traders and Craftspersons! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Towns Traders and Craftspersons?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Towns Traders and Craftspersons?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Tribes Nomads and Settled Communities": {
+      content: "Welcome to the lesson on Tribes Nomads and Settled Communities! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Tribes Nomads and Settled Communities?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Tribes Nomads and Settled Communities?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Devotional Paths to the Divine": {
+      content: "Welcome to the lesson on Devotional Paths to the Divine! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Devotional Paths to the Divine?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Devotional Paths to the Divine?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Making of Regional Cultures": {
+      content: "Welcome to the lesson on The Making of Regional Cultures! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Making of Regional Cultures?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Making of Regional Cultures?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "18th-Century Political Formations": {
+      content: "Welcome to the lesson on 18th-Century Political Formations! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in 18th-Century Political Formations?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from 18th-Century Political Formations?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Environment": {
+      content: "Welcome to the lesson on Environment! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Environment?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Environment?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Inside Our Earth": {
+      content: "Welcome to the lesson on Inside Our Earth! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Inside Our Earth?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Inside Our Earth?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Our Changing Earth": {
+      content: "Welcome to the lesson on Our Changing Earth! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Our Changing Earth?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Our Changing Earth?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Air": {
+      content: "Welcome to the lesson on Air! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Air?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Air?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Water": {
+      content: "Welcome to the lesson on Water! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Water?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Water?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Natural Vegetation and Wildlife": {
+      content: "Welcome to the lesson on Natural Vegetation and Wildlife! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Natural Vegetation and Wildlife?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Natural Vegetation and Wildlife?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Human Environment - Settlement Transport and Communication": {
+      content: "Welcome to the lesson on Human Environment - Settlement Transport and Communication! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Human Environment - Settlement Transport and Communication?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Human Environment - Settlement Transport and Communication?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Human Environment Interactions - The Tropical and Subtropical Region": {
+      content: "Welcome to the lesson on Human Environment Interactions - The Tropical and Subtropical Region! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Human Environment Interactions - The Tropical and Subtropical Region?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Human Environment Interactions - The Tropical and Subtropical Region?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Life in the Deserts": {
+      content: "Welcome to the lesson on Life in the Deserts! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Life in the Deserts?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Life in the Deserts?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "On Equality": {
+      content: "Welcome to the lesson on On Equality! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in On Equality?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from On Equality?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Role of the Government in Health": {
+      content: "Welcome to the lesson on Role of the Government in Health! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Role of the Government in Health?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Role of the Government in Health?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "How the State Government Works": {
+      content: "Welcome to the lesson on How the State Government Works! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in How the State Government Works?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from How the State Government Works?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Growing up as Boys and Girls": {
+      content: "Welcome to the lesson on Growing up as Boys and Girls! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Growing up as Boys and Girls?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Growing up as Boys and Girls?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Women Change the World": {
+      content: "Welcome to the lesson on Women Change the World! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Women Change the World?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Women Change the World?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Understanding Media": {
+      content: "Welcome to the lesson on Understanding Media! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Understanding Media?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Understanding Media?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Markets Around Us": {
+      content: "Welcome to the lesson on Markets Around Us! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Markets Around Us?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Markets Around Us?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "A Shirt in the Market": {
+      content: "Welcome to the lesson on A Shirt in the Market! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in A Shirt in the Market?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from A Shirt in the Market?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Struggles for Equality": {
+      content: "Welcome to the lesson on Struggles for Equality! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Struggles for Equality?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Struggles for Equality?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Rational Numbers": {
+      content: "Welcome to the lesson on Rational Numbers! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Rational Numbers?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Rational Numbers?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Linear Equations in One Variable": {
+      content: "Welcome to the lesson on Linear Equations in One Variable! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Linear Equations in One Variable?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Linear Equations in One Variable?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Understanding Quadrilaterals": {
+      content: "Welcome to the lesson on Understanding Quadrilaterals! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Understanding Quadrilaterals?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Understanding Quadrilaterals?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Practical Geometry": {
+      content: "Welcome to the lesson on Practical Geometry! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Practical Geometry?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Practical Geometry?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Squares and Square Roots": {
+      content: "Welcome to the lesson on Squares and Square Roots! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Squares and Square Roots?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Squares and Square Roots?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Cubes and Cube Roots": {
+      content: "Welcome to the lesson on Cubes and Cube Roots! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Cubes and Cube Roots?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Cubes and Cube Roots?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Comparing Quantities": {
+      content: "Welcome to the lesson on Comparing Quantities! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Comparing Quantities?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Comparing Quantities?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Algebraic Expressions and Identities": {
+      content: "Welcome to the lesson on Algebraic Expressions and Identities! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Algebraic Expressions and Identities?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Algebraic Expressions and Identities?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Visualising Solid Shapes": {
+      content: "Welcome to the lesson on Visualising Solid Shapes! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Visualising Solid Shapes?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Visualising Solid Shapes?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Mensuration": {
+      content: "Welcome to the lesson on Mensuration! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Mensuration?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Mensuration?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Exponents and Powers": {
+      content: "Welcome to the lesson on Exponents and Powers! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Exponents and Powers?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Exponents and Powers?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Direct and Inverse Proportions": {
+      content: "Welcome to the lesson on Direct and Inverse Proportions! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Direct and Inverse Proportions?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Direct and Inverse Proportions?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Factorisation": {
+      content: "Welcome to the lesson on Factorisation! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Factorisation?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Factorisation?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Introduction to Graphs": {
+      content: "Welcome to the lesson on Introduction to Graphs! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Introduction to Graphs?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Introduction to Graphs?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Playing with Numbers": {
+      content: "Welcome to the lesson on Playing with Numbers! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Playing with Numbers?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Playing with Numbers?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Crop Production and Management": {
+      content: "Welcome to the lesson on Crop Production and Management! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Crop Production and Management?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Crop Production and Management?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Microorganisms: Friend and Foe": {
+      content: "Welcome to the lesson on Microorganisms: Friend and Foe! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Microorganisms: Friend and Foe?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Microorganisms: Friend and Foe?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Synthetic Fibres and Plastics": {
+      content: "Welcome to the lesson on Synthetic Fibres and Plastics! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Synthetic Fibres and Plastics?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Synthetic Fibres and Plastics?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Materials: Metals and Non-Metals": {
+      content: "Welcome to the lesson on Materials: Metals and Non-Metals! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Materials: Metals and Non-Metals?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Materials: Metals and Non-Metals?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Coal and Petroleum": {
+      content: "Welcome to the lesson on Coal and Petroleum! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Coal and Petroleum?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Coal and Petroleum?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Combustion and Flame": {
+      content: "Welcome to the lesson on Combustion and Flame! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Combustion and Flame?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Combustion and Flame?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Conservation of Plants and Animals": {
+      content: "Welcome to the lesson on Conservation of Plants and Animals! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Conservation of Plants and Animals?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Conservation of Plants and Animals?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Cell — Structure and Functions": {
+      content: "Welcome to the lesson on Cell — Structure and Functions! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Cell — Structure and Functions?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Cell — Structure and Functions?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Reproduction in Animals": {
+      content: "Welcome to the lesson on Reproduction in Animals! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Reproduction in Animals?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Reproduction in Animals?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Reaching the Age of Adolescence": {
+      content: "Welcome to the lesson on Reaching the Age of Adolescence! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Reaching the Age of Adolescence?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Reaching the Age of Adolescence?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Force and Pressure": {
+      content: "Welcome to the lesson on Force and Pressure! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Force and Pressure?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Force and Pressure?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Friction": {
+      content: "Welcome to the lesson on Friction! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Friction?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Friction?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Sound": {
+      content: "Welcome to the lesson on Sound! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Sound?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Sound?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Chemical Effects of Electric Current": {
+      content: "Welcome to the lesson on Chemical Effects of Electric Current! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Chemical Effects of Electric Current?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Chemical Effects of Electric Current?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Some Natural Phenomena": {
+      content: "Welcome to the lesson on Some Natural Phenomena! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Some Natural Phenomena?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Some Natural Phenomena?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Light": {
+      content: "Welcome to the lesson on Light! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Light?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Light?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Stars and the Solar System": {
+      content: "Welcome to the lesson on Stars and the Solar System! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Stars and the Solar System?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Stars and the Solar System?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Pollution of Air and Water": {
+      content: "Welcome to the lesson on Pollution of Air and Water! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Pollution of Air and Water?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Pollution of Air and Water?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "How When and Where": {
+      content: "Welcome to the lesson on How When and Where! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in How When and Where?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from How When and Where?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "From Trade to Territory": {
+      content: "Welcome to the lesson on From Trade to Territory! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in From Trade to Territory?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from From Trade to Territory?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Ruling the Countryside": {
+      content: "Welcome to the lesson on Ruling the Countryside! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Ruling the Countryside?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Ruling the Countryside?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Tribals Dikus and the Vision of a Golden Age": {
+      content: "Welcome to the lesson on Tribals Dikus and the Vision of a Golden Age! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Tribals Dikus and the Vision of a Golden Age?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Tribals Dikus and the Vision of a Golden Age?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "When People Rebel": {
+      content: "Welcome to the lesson on When People Rebel! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in When People Rebel?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from When People Rebel?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Colonialism and the City": {
+      content: "Welcome to the lesson on Colonialism and the City! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Colonialism and the City?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Colonialism and the City?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Weavers Iron Smelters and Factory Owners": {
+      content: "Welcome to the lesson on Weavers Iron Smelters and Factory Owners! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Weavers Iron Smelters and Factory Owners?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Weavers Iron Smelters and Factory Owners?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Civilising the Native Educating the Nation": {
+      content: "Welcome to the lesson on Civilising the Native Educating the Nation! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Civilising the Native Educating the Nation?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Civilising the Native Educating the Nation?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Women Caste and Reform": {
+      content: "Welcome to the lesson on Women Caste and Reform! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Women Caste and Reform?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Women Caste and Reform?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Changing World of Visual Arts": {
+      content: "Welcome to the lesson on The Changing World of Visual Arts! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Changing World of Visual Arts?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Changing World of Visual Arts?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Making of the National Movement: 1870s-1947": {
+      content: "Welcome to the lesson on The Making of the National Movement: 1870s-1947! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Making of the National Movement: 1870s-1947?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Making of the National Movement: 1870s-1947?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "India After Independence": {
+      content: "Welcome to the lesson on India After Independence! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in India After Independence?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from India After Independence?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Resources": {
+      content: "Welcome to the lesson on Resources! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Resources?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Resources?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Land Soil Water Natural Vegetation and Wildlife Resources": {
+      content: "Welcome to the lesson on Land Soil Water Natural Vegetation and Wildlife Resources! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Land Soil Water Natural Vegetation and Wildlife Resources?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Land Soil Water Natural Vegetation and Wildlife Resources?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Mineral and Power Resources": {
+      content: "Welcome to the lesson on Mineral and Power Resources! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Mineral and Power Resources?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Mineral and Power Resources?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Agriculture": {
+      content: "Welcome to the lesson on Agriculture! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Agriculture?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Agriculture?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Industries": {
+      content: "Welcome to the lesson on Industries! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Industries?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Industries?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Human Resources": {
+      content: "Welcome to the lesson on Human Resources! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Human Resources?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Human Resources?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Indian Constitution": {
+      content: "Welcome to the lesson on The Indian Constitution! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Indian Constitution?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Indian Constitution?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Understanding Secularism": {
+      content: "Welcome to the lesson on Understanding Secularism! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Understanding Secularism?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Understanding Secularism?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Why do we need a Parliament?": {
+      content: "Welcome to the lesson on Why do we need a Parliament?! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Why do we need a Parliament??", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Why do we need a Parliament??", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Understanding Laws": {
+      content: "Welcome to the lesson on Understanding Laws! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Understanding Laws?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Understanding Laws?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Judiciary": {
+      content: "Welcome to the lesson on Judiciary! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Judiciary?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Judiciary?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Understanding Our Criminal Justice System": {
+      content: "Welcome to the lesson on Understanding Our Criminal Justice System! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Understanding Our Criminal Justice System?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Understanding Our Criminal Justice System?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Understanding Marginalisation": {
+      content: "Welcome to the lesson on Understanding Marginalisation! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Understanding Marginalisation?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Understanding Marginalisation?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Confronting Marginalisation": {
+      content: "Welcome to the lesson on Confronting Marginalisation! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Confronting Marginalisation?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Confronting Marginalisation?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Public Facilities": {
+      content: "Welcome to the lesson on Public Facilities! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Public Facilities?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Public Facilities?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Law and Social Justice": {
+      content: "Welcome to the lesson on Law and Social Justice! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Law and Social Justice?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Law and Social Justice?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Number Systems": {
+      content: "Welcome to the lesson on Number Systems! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Number Systems?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Number Systems?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Polynomials": {
+      content: "Welcome to the lesson on Polynomials! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Polynomials?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Polynomials?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Coordinate Geometry": {
+      content: "Welcome to the lesson on Coordinate Geometry! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Coordinate Geometry?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Coordinate Geometry?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Linear Equations in Two Variables": {
+      content: "Welcome to the lesson on Linear Equations in Two Variables! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Linear Equations in Two Variables?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Linear Equations in Two Variables?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Introduction to Euclid's Geometry": {
+      content: "Welcome to the lesson on Introduction to Euclid's Geometry! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Introduction to Euclid's Geometry?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Introduction to Euclid's Geometry?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Lines and Angles": {
+      content: "Welcome to the lesson on Lines and Angles! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Lines and Angles?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Lines and Angles?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Triangles": {
+      content: "Welcome to the lesson on Triangles! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Triangles?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Triangles?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Quadrilaterals": {
+      content: "Welcome to the lesson on Quadrilaterals! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Quadrilaterals?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Quadrilaterals?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Areas of Parallelograms and Triangles": {
+      content: "Welcome to the lesson on Areas of Parallelograms and Triangles! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Areas of Parallelograms and Triangles?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Areas of Parallelograms and Triangles?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Circles": {
+      content: "Welcome to the lesson on Circles! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Circles?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Circles?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Constructions": {
+      content: "Welcome to the lesson on Constructions! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Constructions?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Constructions?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Heron's Formula": {
+      content: "Welcome to the lesson on Heron's Formula! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Heron's Formula?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Heron's Formula?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Surface Areas and Volumes": {
+      content: "Welcome to the lesson on Surface Areas and Volumes! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Surface Areas and Volumes?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Surface Areas and Volumes?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Statistics": {
+      content: "Welcome to the lesson on Statistics! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Statistics?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Statistics?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Probability": {
+      content: "Welcome to the lesson on Probability! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Probability?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Probability?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Matter in Our Surroundings": {
+      content: "Welcome to the lesson on Matter in Our Surroundings! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Matter in Our Surroundings?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Matter in Our Surroundings?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Is Matter Around Us Pure": {
+      content: "Welcome to the lesson on Is Matter Around Us Pure! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Is Matter Around Us Pure?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Is Matter Around Us Pure?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Atoms and Molecules": {
+      content: "Welcome to the lesson on Atoms and Molecules! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Atoms and Molecules?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Atoms and Molecules?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Structure of the Atom": {
+      content: "Welcome to the lesson on Structure of the Atom! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Structure of the Atom?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Structure of the Atom?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Fundamental Unit of Life": {
+      content: "Welcome to the lesson on The Fundamental Unit of Life! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Fundamental Unit of Life?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Fundamental Unit of Life?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Tissues": {
+      content: "Welcome to the lesson on Tissues! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Tissues?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Tissues?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Diversity in Living Organisms": {
+      content: "Welcome to the lesson on Diversity in Living Organisms! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Diversity in Living Organisms?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Diversity in Living Organisms?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Motion": {
+      content: "Welcome to the lesson on Motion! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Motion?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Motion?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Force and Laws of Motion": {
+      content: "Welcome to the lesson on Force and Laws of Motion! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Force and Laws of Motion?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Force and Laws of Motion?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Gravitation": {
+      content: "Welcome to the lesson on Gravitation! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Gravitation?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Gravitation?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Work and Energy": {
+      content: "Welcome to the lesson on Work and Energy! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Work and Energy?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Work and Energy?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Sound": {
+      content: "Welcome to the lesson on Sound! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Sound?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Sound?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Why Do We Fall Ill": {
+      content: "Welcome to the lesson on Why Do We Fall Ill! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Why Do We Fall Ill?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Why Do We Fall Ill?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Natural Resources": {
+      content: "Welcome to the lesson on Natural Resources! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Natural Resources?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Natural Resources?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Improvement in Food Resources": {
+      content: "Welcome to the lesson on Improvement in Food Resources! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Improvement in Food Resources?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Improvement in Food Resources?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The French Revolution": {
+      content: "Welcome to the lesson on The French Revolution! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The French Revolution?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The French Revolution?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Socialism in Europe and the Russian Revolution": {
+      content: "Welcome to the lesson on Socialism in Europe and the Russian Revolution! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Socialism in Europe and the Russian Revolution?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Socialism in Europe and the Russian Revolution?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Nazism and the Rise of Hitler": {
+      content: "Welcome to the lesson on Nazism and the Rise of Hitler! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Nazism and the Rise of Hitler?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Nazism and the Rise of Hitler?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Forest Society and Colonialism": {
+      content: "Welcome to the lesson on Forest Society and Colonialism! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Forest Society and Colonialism?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Forest Society and Colonialism?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Pastoralists in the Modern World": {
+      content: "Welcome to the lesson on Pastoralists in the Modern World! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Pastoralists in the Modern World?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Pastoralists in the Modern World?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "India - Size and Location": {
+      content: "Welcome to the lesson on India - Size and Location! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in India - Size and Location?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from India - Size and Location?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Physical Features of India": {
+      content: "Welcome to the lesson on Physical Features of India! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Physical Features of India?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Physical Features of India?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Drainage": {
+      content: "Welcome to the lesson on Drainage! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Drainage?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Drainage?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Climate": {
+      content: "Welcome to the lesson on Climate! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Climate?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Climate?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Natural Vegetation and Wild Life": {
+      content: "Welcome to the lesson on Natural Vegetation and Wild Life! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Natural Vegetation and Wild Life?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Natural Vegetation and Wild Life?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Population": {
+      content: "Welcome to the lesson on Population! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Population?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Population?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "What is Democracy? Why Democracy?": {
+      content: "Welcome to the lesson on What is Democracy? Why Democracy?! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in What is Democracy? Why Democracy??", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from What is Democracy? Why Democracy??", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Constitutional Design": {
+      content: "Welcome to the lesson on Constitutional Design! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Constitutional Design?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Constitutional Design?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Electoral Politics": {
+      content: "Welcome to the lesson on Electoral Politics! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Electoral Politics?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Electoral Politics?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Working of Institutions": {
+      content: "Welcome to the lesson on Working of Institutions! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Working of Institutions?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Working of Institutions?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Democratic Rights": {
+      content: "Welcome to the lesson on Democratic Rights! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Democratic Rights?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Democratic Rights?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "The Story of Village Palampur": {
+      content: "Welcome to the lesson on The Story of Village Palampur! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in The Story of Village Palampur?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from The Story of Village Palampur?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "People as Resource": {
+      content: "Welcome to the lesson on People as Resource! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in People as Resource?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from People as Resource?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Poverty as a Challenge": {
+      content: "Welcome to the lesson on Poverty as a Challenge! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Poverty as a Challenge?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Poverty as a Challenge?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+    "Food Security in India": {
+      content: "Welcome to the lesson on Food Security in India! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
+      quiz: [
+        { question: "What is a key concept in Food Security in India?", options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" },
+        { question: "What do we learn from Food Security in India?", options: ["Values", "Numbers", "Language", "Nature"], answer: "Values" }
+      ],
+      topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    },
+
     "How Many Ponytails?": {
       content: "Welcome to the lesson on How Many Ponytails?! This chapter will teach you fascinating things about this topic. Pay close attention to the stories and concepts.",
       quiz: [
@@ -4389,4 +7812,34 @@ Reproduction is a biological process by which an organism reproduces an offsprin
       { title: `Summary & Review`, explanation: `We wrap up everything we've learned today.`, words: ["Summary", "Review", "Memory"], activities: `Close your eyes and remember the 3 most important parts.` }
     ]
   };
+};
+
+
+export const getLessonContent = (title, subject, lessonNum = 1, isSundayTest = false, classNum) => {
+  const result = getLessonContentOriginal(title, subject, lessonNum, classNum);
+  
+  if (isSundayTest) {
+    let megaQuiz = [];
+    let baseQuiz = result.quiz && result.quiz.length > 0 ? result.quiz : [
+      { question: `What is a key concept in ${title}?`, options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" }
+    ];
+    
+    // Duplicate and modify to reach 25 questions
+    for (let i = 0; i < 25; i++) {
+      let q = baseQuiz[i % baseQuiz.length];
+      megaQuiz.push({
+        question: `(Q${i + 1}) ${q.question}`,
+        options: q.options,
+        answer: q.answer
+      });
+    }
+    
+    result.quiz = megaQuiz;
+    result.content = `<div style="padding: 1rem; background: rgba(255, 51, 68, 0.1); border-radius: 16px; margin-bottom: 2rem; text-align: center;">
+      <h2 style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent-red);">🏆 Weekly Mega Assessment</h2>
+      <p>This is your Sunday test for ${subject}. Answer all 25 questions correctly to pass!</p>
+    </div>` + result.content;
+  }
+  
+  return result;
 };

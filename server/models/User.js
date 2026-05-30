@@ -10,6 +10,12 @@ const UserSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  nickname: {
+    type: String,
+    trim: true,
+    maxlength: 40,
+    index: true
+  },
   password: {
     type: String,
     required: true
