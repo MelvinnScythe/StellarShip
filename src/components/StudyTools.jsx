@@ -4,6 +4,22 @@ import { motion } from 'framer-motion';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { speak, stopSpeaking, GEMINI_VOICES } from '../utils/speech';
 
+const parseSpeechApiError = async (response) => {
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 429 || data.rateLimited) {
+    return data.error || 'Gemini rate limit reached. Wait about a minute and try again.';
+  }
+  return data.error || `Server error: ${response.status}`;
+};
+
+const speechAnalysisHint = (msg) => {
+  if (/rate limit|quota/i.test(msg)) return '';
+  if (/fetch|failed|network/i.test(msg)) {
+    return '\n\nStart the backend in another terminal: npm run dev:server';
+  }
+  return '';
+};
+
 const SpeakingTab = ({ userClass }) => {
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY_SPEAKING || import.meta.env.VITE_GEMINI_API_KEY);
   const [targetText, setTargetText] = useState("The quick brown fox jumps over the lazy dog.");
@@ -107,23 +123,23 @@ const SpeakingTab = ({ userClass }) => {
       const byteChars = atob(audioToUse.base64);
       const byteNums = new Uint8Array(byteChars.length);
       for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
-      const audioBlob = new Blob([byteNums], { type: 'audio/webm' });
+      const mimeType = audioToUse.mimeType || 'audio/webm';
+      const audioBlob = new Blob([byteNums], { type: mimeType });
 
-      // POST to our backend — which handles the Gemini Files API upload
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('audio', audioBlob, `recording.${mimeType.includes('mp4') ? 'm4a' : 'webm'}`);
+      formData.append('mimeType', mimeType);
       formData.append('targetText', targetText);
       formData.append('mode', coachMode);
 
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || '';
       const response = await fetch(`${apiUrl}/api/analyze-speech`, {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Server error: ${response.status}`);
+        throw new Error(await parseSpeechApiError(response));
       }
 
       const feedback = await response.json();
@@ -133,7 +149,8 @@ const SpeakingTab = ({ userClass }) => {
       }
     } catch (e) {
       console.error('Speech Analysis Error:', e);
-      alert(`Analysis failed: ${e.message}`);
+      const msg = e.message || 'Unknown error';
+      alert(`Analysis failed: ${msg}${speechAnalysisHint(msg)}`);
     } finally {
       setIsAnalyzing(false);
     }
@@ -162,20 +179,22 @@ const SpeakingTab = ({ userClass }) => {
       const byteChars = atob(audioData.base64);
       const byteNums = new Uint8Array(byteChars.length);
       for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
-      const audioBlob = new Blob([byteNums], { type: 'audio/webm' });
+      const mimeType = audioData.mimeType || 'audio/webm';
+      const audioBlob = new Blob([byteNums], { type: mimeType });
 
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('audio', audioBlob, `recording.${mimeType.includes('mp4') ? 'm4a' : 'webm'}`);
+      formData.append('mimeType', mimeType);
       formData.append('drillText', drillSession[currentDrillIndex]);
 
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || '';
       const response = await fetch(`${apiUrl}/api/analyze-speech/drill`, {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Server error');
+        throw new Error(await parseSpeechApiError(response));
       }
 
       const result = await response.json();
@@ -196,7 +215,8 @@ const SpeakingTab = ({ userClass }) => {
       }
     } catch (e) {
       console.error('Drill Analysis Error:', e);
-      alert('Failed to analyze drill.');
+      const msg = e.message || 'Unknown error';
+      alert(`Drill analysis failed: ${msg}${speechAnalysisHint(msg)}`);
     } finally {
       setIsAnalyzingDrill(false);
     }

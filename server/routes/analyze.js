@@ -4,7 +4,48 @@ const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const upload = multer({ storage: multer.memoryStorage() });
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+const getModel = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not set on the server. Add it to .env in the project root and restart the server.');
+  }
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const modelName = process.env.GEMINI_SPEECH_MODEL || 'gemini-2.0-flash';
+  return genAI.getGenerativeModel({ model: modelName });
+};
+
+const audioMime = (req) => {
+  const fromBody = (req.body?.mimeType || '').trim();
+  if (fromBody && fromBody.startsWith('audio/')) return fromBody;
+  if (req.file?.mimetype?.startsWith('audio/')) return req.file.mimetype;
+  return 'audio/webm';
+};
+
+const isRateLimitError = (err) => {
+  const msg = String(err?.message || err || '').toLowerCase();
+  const status = err?.status || err?.statusCode;
+  return (
+    status === 429
+    || msg.includes('429')
+    || msg.includes('rate limit')
+    || msg.includes('quota')
+    || msg.includes('resource_exhausted')
+    || msg.includes('too many requests')
+    || msg.includes('exceeded')
+  );
+};
+
+const sendAnalyzeError = (res, err, label) => {
+  console.error(`[${label}] Error:`, err?.message || err);
+  if (isRateLimitError(err)) {
+    return res.status(429).json({
+      error: 'Gemini rate limit reached. Wait about a minute and try again, or check your quota in Google AI Studio.',
+      rateLimited: true
+    });
+  }
+  return res.status(500).json({ error: err?.message || 'Speech analysis failed.' });
+};
 
 // ─── Main sentence analysis ─────────────────────────────────────────────────
 router.post('/', upload.single('audio'), async (req, res) => {
@@ -65,10 +106,10 @@ Return ONLY this JSON (no markdown, no code block):
 }`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = getModel();
     const result = await model.generateContent([
       prompt,
-      { inlineData: { mimeType: 'audio/webm', data: audioBase64 } },
+      { inlineData: { mimeType: audioMime(req), data: audioBase64 } },
     ]);
 
     const text = result.response.text();
@@ -82,8 +123,7 @@ Return ONLY this JSON (no markdown, no code block):
     console.log('[Analyze] Score:', feedback.score, '| Heard:', feedback.heardTranscript);
     res.json(feedback);
   } catch (err) {
-    console.error('[Analyze] Error:', err.message);
-    res.status(500).json({ error: err.message });
+    sendAnalyzeError(res, err, 'Analyze');
   }
 });
 
@@ -114,10 +154,10 @@ Return ONLY this JSON:
 }`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = getModel();
     const result = await model.generateContent([
       prompt,
-      { inlineData: { mimeType: 'audio/webm', data: audioBase64 } },
+      { inlineData: { mimeType: audioMime(req), data: audioBase64 } },
     ]);
 
     const text = result.response.text();
@@ -130,8 +170,7 @@ Return ONLY this JSON:
     console.log('[Drill] Score:', drillResult.score, '| Passed:', drillResult.passed);
     res.json(drillResult);
   } catch (err) {
-    console.error('[Drill] Error:', err.message);
-    res.status(500).json({ error: err.message });
+    sendAnalyzeError(res, err, 'Drill');
   }
 });
 
