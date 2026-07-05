@@ -1,19 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY_2 || process.env.OPENROUTER_API_KEY;
 const upload = multer({ storage: multer.memoryStorage() });
 
-const getModel = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not set on the server. Add it to .env in the project root and restart the server.');
+async function callOpenRouter(prompt, mimeType, base64Data) {
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      max_tokens: 1500,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Data}` } }
+        ]
+      }]
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`OpenRouter API error: ${await response.text()}`);
   }
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelName = process.env.GEMINI_SPEECH_MODEL || 'gemini-2.0-flash';
-  return genAI.getGenerativeModel({ model: modelName });
-};
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
 
 const audioMime = (req) => {
   const fromBody = (req.body?.mimeType || '').trim();
@@ -106,13 +122,7 @@ Return ONLY this JSON (no markdown, no code block):
 }`;
 
   try {
-    const model = getModel();
-    const result = await model.generateContent([
-      prompt,
-      { inlineData: { mimeType: audioMime(req), data: audioBase64 } },
-    ]);
-
-    const text = result.response.text();
+    const text = await callOpenRouter(prompt, audioMime(req), audioBase64);
     console.log('[Analyze] Raw response:', text.slice(0, 400));
 
     const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -154,13 +164,7 @@ Return ONLY this JSON:
 }`;
 
   try {
-    const model = getModel();
-    const result = await model.generateContent([
-      prompt,
-      { inlineData: { mimeType: audioMime(req), data: audioBase64 } },
-    ]);
-
-    const text = result.response.text();
+    const text = await callOpenRouter(prompt, audioMime(req), audioBase64);
     const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return res.status(500).json({ error: 'AI returned unexpected format.' });

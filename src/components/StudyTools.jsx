@@ -1,8 +1,10 @@
 import { Calculator, ArrowRightLeft, Clock, Book, Loader2, Sparkles, ClipboardList, Volume2, Mic, StopCircle, Play, AlertCircle, Loader } from 'lucide-react';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { speak, stopSpeaking, GEMINI_VOICES } from '../utils/speech';
+
+const API_ROOT = import.meta.env.VITE_API_URL || '';
 
 const parseSpeechApiError = async (response) => {
   const data = await response.json().catch(() => ({}));
@@ -21,7 +23,6 @@ const speechAnalysisHint = (msg) => {
 };
 
 const SpeakingTab = ({ userClass }) => {
-  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY_SPEAKING || import.meta.env.VITE_GEMINI_API_KEY);
   const [targetText, setTargetText] = useState("The quick brown fox jumps over the lazy dog.");
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -88,8 +89,7 @@ const SpeakingTab = ({ userClass }) => {
           setTranscript(finalTranscript);
         };
         recognitionRef.current.onend = () => {
-          // Trigger analysis after recognition ends to ensure we have the full text
-          setIsRecording(false);
+          // Do nothing. The user will manually click 'Stop Recording' which stops both the mic and the UI state.
         };
         recognitionRef.current.start();
       }
@@ -139,7 +139,14 @@ const SpeakingTab = ({ userClass }) => {
       });
 
       if (!response.ok) {
-        throw new Error(await parseSpeechApiError(response));
+        let errMsg = 'Speech analysis failed.';
+        try {
+          const errJson = await response.json();
+          errMsg = errJson.error || errMsg;
+        } catch (e) {
+          errMsg = await response.text();
+        }
+        throw new Error(errMsg);
       }
 
       const feedback = await response.json();
@@ -227,30 +234,18 @@ const SpeakingTab = ({ userClass }) => {
     setIsAnalyzingTarget(true);
     setTargetAnalysis(null);
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      const prompt = `Analyze this sentence for a Class ${userClass || 'elementary'} student: "${targetText}".
-      Provide:
-      1. Simple meaning.
-      2. Grammar points explained simply.
-      3. Key vocabulary words and meanings.
-      
-      Return ONLY a raw JSON object:
-      {
-        "meaning": "string",
-        "grammar": ["string"],
-        "vocabulary": [{"word": "string", "meaning": "string"}]
+      const response = await fetch(`${API_ROOT}/api/ai/speaking/target-analysis`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetText, userClass }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Server error: ${response.status}`);
       }
-      Strictly JSON. No extra text.`;
-      
-      const result = await model.generateContent(prompt);
-      let text = result.response.text();
-      // More robust JSON extraction
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        setTargetAnalysis(JSON.parse(jsonMatch[0]));
-      } else {
-        throw new Error("Invalid response format");
-      }
+
+      setTargetAnalysis(await response.json());
     } catch (e) {
       console.error("Target Analysis Error:", e);
       alert("AI analysis failed. Please try again.");
@@ -262,10 +257,19 @@ const SpeakingTab = ({ userClass }) => {
   const generateNewSentence = async () => {
     setIsAnalyzing(true);
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      const prompt = `Generate a single short sentence in ${targetLanguage} for a Class ${userClass} student to practice speaking and pronunciation. Keep it simple and age-appropriate. Just the text, no quotes. If Hindi, use Devanagari script.`;
-      const result = await model.generateContent(prompt);
-      setTargetText(result.response.text().trim());
+      const response = await fetch(`${API_ROOT}/api/ai/speaking/sentence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetLanguage, userClass }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Server error: ${response.status}`);
+      }
+
+      const { text } = await response.json();
+      setTargetText(text.trim());
       setTranscript('');
       setAudioUrl(null);
       setFeedback(null);
@@ -676,12 +680,41 @@ const SpeakingTab = ({ userClass }) => {
   );
 };
 
-const StudyTools = ({ userClass, initialTab = 'calculator', isFullscreen = false }) => {
-  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY_TEXT || import.meta.env.VITE_GEMINI_API_KEY);
+const StudyTools = ({ userClass, initialTab = 'speaking', isFullscreen = false }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [layoutMode, setLayoutMode] = useState('sidebar'); // 'sidebar' or 'box'
   const [calcInput, setCalcInput] = useState('');
   const [unitValue, setUnitValue] = useState('');
   const [unitType, setUnitType] = useState('cmToM');
+
+  // AI Math State
+  const [aiMathInput, setAiMathInput] = useState('');
+  const [aiMathSolution, setAiMathSolution] = useState(null);
+  const [isSolvingMath, setIsSolvingMath] = useState(false);
+
+  const solveMath = async () => {
+    if (!aiMathInput.trim()) return;
+    setIsSolvingMath(true);
+    setAiMathSolution(null);
+    try {
+      const response = await fetch(`${API_ROOT}/api/ai/math-solver`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problem: aiMathInput, userClass }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setAiMathSolution(data.solution);
+      } else {
+        setAiMathSolution('Error: ' + data.error);
+      }
+    } catch (e) {
+      setAiMathSolution('Sorry, could not connect to the AI solver.');
+    } finally {
+      setIsSolvingMath(false);
+    }
+  };
 
   // Timer State
   const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -705,12 +738,23 @@ const StudyTools = ({ userClass, initialTab = 'calculator', isFullscreen = false
     if (!flashcardTopic.trim()) return;
     setIsGeneratingCards(true);
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      const prompt = `Generate ${flashcardCount} educational flashcards about "${flashcardTopic}" for a student in Class ${userClass || 'elementary/middle'}. The difficulty level should be ${flashcardDifficulty}. Return ONLY a raw JSON array of objects, each with a 'q' (question) and 'a' (answer) field. Do not wrap it in markdown code blocks. Just the raw JSON.`;
-      const result = await model.generateContent(prompt);
-      let text = result.response.text();
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(text);
+      const response = await fetch(`${API_ROOT}/api/ai/flashcards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: flashcardTopic,
+          count: flashcardCount,
+          difficulty: flashcardDifficulty,
+          userClass,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Server error: ${response.status}`);
+      }
+
+      const parsed = await response.json();
       setFlashcards(parsed);
       setCardIndex(0);
       setCardFlipped(false);
@@ -734,18 +778,18 @@ const StudyTools = ({ userClass, initialTab = 'calculator', isFullscreen = false
     if (!examTopic.trim()) return;
     setIsGeneratingExam(true);
     try {
-      const chapters = examTopic.split(',').map(c => c.trim()).filter(c => c);
-      let numQuestions = 20;
-      if (chapters.length === 2) numQuestions = 30;
-      else if (chapters.length === 3) numQuestions = 45;
-      else if (chapters.length > 3) numQuestions = 45 + ((chapters.length - 3) * 5);
+      const response = await fetch(`${API_ROOT}/api/ai/exam`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: examTopic, userClass }),
+      });
 
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      const prompt = `Generate a ${numQuestions}-question multiple choice exam based on the following chapters/topics: "${examTopic}". The student is in Class ${userClass || 'elementary/middle'}. Return ONLY a raw JSON array of objects. Each object must have: 'q' (the question), 'options' (an array of 4 string choices), and 'a' (the exact string of the correct option). Do not wrap in markdown. Just the JSON.`;
-      const result = await model.generateContent(prompt);
-      let text = result.response.text();
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(text);
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Server error: ${response.status}`);
+      }
+
+      const parsed = await response.json();
       setExamQuestions(parsed);
       setExamAnswers({});
       setExamScore(null);
@@ -809,7 +853,12 @@ const StudyTools = ({ userClass, initialTab = 'calculator', isFullscreen = false
   };
 
   return (
-    <section id="study-tools" style={{ padding: isFullscreen ? '0' : '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <section id="study-tools" style={isFullscreen ? (
+      layoutMode === 'sidebar' 
+        ? { display: 'flex', flex: 1, width: '100%', overflow: 'hidden' }
+        : { padding: '5rem 2rem 2rem', maxWidth: '1400px', width: '100%', margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }
+    ) : { padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto', height: 'auto' }}>
+      
       {!isFullscreen && (
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: '800', marginBottom: '1rem', background: 'linear-gradient(135deg, #fff, #a1a1aa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -821,98 +870,172 @@ const StudyTools = ({ userClass, initialTab = 'calculator', isFullscreen = false
         </div>
       )}
 
-      <div style={{ 
+      {isFullscreen && layoutMode === 'box' && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', flexShrink: 0 }}>
+          <button onClick={() => navigate('/home')} style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--glass-border)', padding: '0.75rem 1.5rem', borderRadius: '100px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
+            ← Back to Mission Control
+          </button>
+          <button onClick={() => setLayoutMode('sidebar')} style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)', padding: '0.75rem 1.5rem', borderRadius: '100px', cursor: 'pointer', fontWeight: 'bold' }}>
+            Attach Sidebar →
+          </button>
+        </div>
+      )}
+
+      <div style={isFullscreen ? (
+        layoutMode === 'sidebar' ? {
+          display: 'flex',
+          width: '100%',
+          height: '100%',
+          background: 'transparent',
+        } : {
+          background: 'rgba(255, 255, 255, 0.03)', 
+          backdropFilter: 'blur(20px)', 
+          border: '1px solid var(--glass-border)', 
+          borderRadius: '24px', 
+          display: 'flex',
+          height: '100%',
+          width: '100%',
+          overflow: 'hidden',
+          flex: 1
+        }
+      ) : { 
         background: 'rgba(255, 255, 255, 0.03)', 
         backdropFilter: 'blur(20px)', 
         border: '1px solid var(--glass-border)', 
         borderRadius: '24px', 
         padding: 'clamp(1rem, 5vw, 2rem)',
-        maxWidth: isFullscreen ? '100%' : '500px',
-        margin: '0 auto'
+        maxWidth: '500px',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        height: 'auto',
+        overflow: 'hidden'
       }}>
-        <div style={{ 
-          display: 'flex', 
-          gap: '0.5rem', 
-          marginBottom: '2rem', 
-          overflowX: 'auto', 
-          paddingBottom: '0.5rem',
-          scrollbarWidth: 'none'
-        }} className="no-scrollbar">
-          <button 
-            onClick={() => setActiveTab('calculator')}
-            style={{ 
-              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
-              background: activeTab === 'calculator' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-              color: activeTab === 'calculator' ? '#8b5cf6' : 'var(--text-secondary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              transition: 'all 0.3s'
-            }}
-          >
-            <Calculator size={18} /> <span className="desktop-only">Math</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('converter')}
-            style={{ 
-              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
-              background: activeTab === 'converter' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-              color: activeTab === 'converter' ? '#8b5cf6' : 'var(--text-secondary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              transition: 'all 0.3s'
-            }}
-          >
-            <ArrowRightLeft size={18} /> <span className="desktop-only">Units</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('timer')}
-            style={{ 
-              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
-              background: activeTab === 'timer' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-              color: activeTab === 'timer' ? '#8b5cf6' : 'var(--text-secondary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              transition: 'all 0.3s'
-            }}
-          >
-            <Clock size={18} /> <span className="desktop-only">Timer</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('flashcards')}
-            style={{ 
-              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
-              background: activeTab === 'flashcards' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-              color: activeTab === 'flashcards' ? '#8b5cf6' : 'var(--text-secondary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              transition: 'all 0.3s'
-            }}
-          >
-            <Book size={18} /> <span className="desktop-only">Cards</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('exam')}
-            style={{ 
-              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
-              background: activeTab === 'exam' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-              color: activeTab === 'exam' ? '#8b5cf6' : 'var(--text-secondary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              transition: 'all 0.3s'
-            }}
-          >
-            <ClipboardList size={18} /> <span className="desktop-only">Exams</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('speaking')}
-            style={{ 
-              flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer',
-              background: activeTab === 'speaking' ? 'rgba(255, 51, 68, 0.2)' : 'transparent',
-              color: activeTab === 'speaking' ? 'var(--accent-red)' : 'var(--text-secondary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              transition: 'all 0.3s'
-            }}
-          >
-            <Volume2 size={18} /> <span className="desktop-only">Speaking</span>
-          </button>
-        </div>
+        {/* Sidebar (Only shown when full screen) */}
+        {isFullscreen && (
+          <div style={{ 
+            width: '280px', 
+            borderRight: '1px solid var(--glass-border)', 
+            padding: '2rem 1.5rem', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '0.5rem',
+            background: 'rgba(10, 10, 15, 0.98)',
+            overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem' }}>
+              {layoutMode === 'sidebar' && (
+                <>
+                  <button onClick={() => navigate('/home')} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--glass-border)', padding: '0.75rem', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                    ← Back
+                  </button>
+                  <button onClick={() => setLayoutMode('box')} title="Float Window" style={{ flex: '0 0 auto', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)', padding: '0.75rem', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    Float
+                  </button>
+                </>
+              )}
+            </div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>AI Tutors</div>
+            <button onClick={() => setActiveTab('speaking')} style={{ width: '100%', textAlign: 'left', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'speaking' ? 'rgba(255, 51, 68, 0.1)' : 'transparent', color: activeTab === 'speaking' ? 'var(--accent-red)' : 'white', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: activeTab === 'speaking' ? '700' : '500', fontSize: '1rem', transition: 'all 0.2s' }}>
+              <Volume2 size={20} /> Speaking Coach
+            </button>
+            <button onClick={() => setActiveTab('aimath')} style={{ width: '100%', textAlign: 'left', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'aimath' ? 'rgba(99, 102, 241, 0.1)' : 'transparent', color: activeTab === 'aimath' ? '#8b5cf6' : 'white', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: activeTab === 'aimath' ? '700' : '500', fontSize: '1rem', transition: 'all 0.2s' }}>
+              <Sparkles size={20} /> AI Math Solver
+            </button>
 
-        {activeTab === 'speaking' && <SpeakingTab userClass={userClass} />}
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '1.5rem', marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>Calculators</div>
+            <button onClick={() => setActiveTab('calculator')} style={{ width: '100%', textAlign: 'left', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'calculator' ? 'rgba(255, 255, 255, 0.05)' : 'transparent', color: activeTab === 'calculator' ? 'white' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: activeTab === 'calculator' ? '700' : '500', fontSize: '1rem', transition: 'all 0.2s' }}>
+              <Calculator size={20} /> Math Calculator
+            </button>
+            <button onClick={() => setActiveTab('converter')} style={{ width: '100%', textAlign: 'left', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'converter' ? 'rgba(255, 255, 255, 0.05)' : 'transparent', color: activeTab === 'converter' ? 'white' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: activeTab === 'converter' ? '700' : '500', fontSize: '1rem', transition: 'all 0.2s' }}>
+              <ArrowRightLeft size={20} /> Unit Converter
+            </button>
+
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '1.5rem', marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>Study Tools</div>
+            <button onClick={() => setActiveTab('timer')} style={{ width: '100%', textAlign: 'left', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'timer' ? 'rgba(16, 185, 129, 0.1)' : 'transparent', color: activeTab === 'timer' ? '#10b981' : 'white', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: activeTab === 'timer' ? '700' : '500', fontSize: '1rem', transition: 'all 0.2s' }}>
+              <Clock size={20} /> Focus Timer
+            </button>
+            <button onClick={() => setActiveTab('flashcards')} style={{ width: '100%', textAlign: 'left', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'flashcards' ? 'rgba(236, 72, 153, 0.1)' : 'transparent', color: activeTab === 'flashcards' ? '#ec4899' : 'white', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: activeTab === 'flashcards' ? '700' : '500', fontSize: '1rem', transition: 'all 0.2s' }}>
+              <Book size={20} /> Flashcards
+            </button>
+            <button onClick={() => setActiveTab('exam')} style={{ width: '100%', textAlign: 'left', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'exam' ? 'rgba(245, 158, 11, 0.1)' : 'transparent', color: activeTab === 'exam' ? '#f59e0b' : 'white', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: activeTab === 'exam' ? '700' : '500', fontSize: '1rem', transition: 'all 0.2s' }}>
+              <ClipboardList size={20} /> Practice Exams
+            </button>
+          </div>
+        )}
+
+        {/* Top bar (Only shown when not full screen) */}
+        {!isFullscreen && (
+          <div style={{ 
+            display: 'flex', 
+            gap: '0.5rem', 
+            marginBottom: '2rem', 
+            overflowX: 'auto', 
+            paddingBottom: '0.5rem',
+            scrollbarWidth: 'none',
+            flexShrink: 0
+          }} className="no-scrollbar">
+            <button onClick={() => setActiveTab('speaking')} style={{ flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'speaking' ? 'rgba(255, 51, 68, 0.2)' : 'transparent', color: activeTab === 'speaking' ? 'var(--accent-red)' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.3s' }}>
+              <Volume2 size={18} /> <span className="desktop-only">Speaking</span>
+            </button>
+            <button onClick={() => setActiveTab('aimath')} style={{ flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'aimath' ? 'rgba(99, 102, 241, 0.2)' : 'transparent', color: activeTab === 'aimath' ? '#8b5cf6' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.3s' }}>
+              <Sparkles size={18} /> <span className="desktop-only">AI Math</span>
+            </button>
+            <button onClick={() => setActiveTab('calculator')} style={{ flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'calculator' ? 'rgba(255, 255, 255, 0.1)' : 'transparent', color: activeTab === 'calculator' ? 'white' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.3s' }}>
+              <Calculator size={18} /> <span className="desktop-only">Calc</span>
+            </button>
+            <button onClick={() => setActiveTab('converter')} style={{ flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'converter' ? 'rgba(255, 255, 255, 0.1)' : 'transparent', color: activeTab === 'converter' ? 'white' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.3s' }}>
+              <ArrowRightLeft size={18} /> <span className="desktop-only">Units</span>
+            </button>
+            <button onClick={() => setActiveTab('timer')} style={{ flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'timer' ? 'rgba(16, 185, 129, 0.2)' : 'transparent', color: activeTab === 'timer' ? '#10b981' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.3s' }}>
+              <Clock size={18} /> <span className="desktop-only">Timer</span>
+            </button>
+            <button onClick={() => setActiveTab('flashcards')} style={{ flex: '0 0 auto', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', background: activeTab === 'flashcards' ? 'rgba(236, 72, 153, 0.2)' : 'transparent', color: activeTab === 'flashcards' ? '#ec4899' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.3s' }}>
+              <Book size={18} /> <span className="desktop-only">Cards</span>
+            </button>
+          </div>
+        )}
+
+        <div style={{ flex: 1, padding: isFullscreen ? '2rem 3rem' : '0', overflowY: 'auto' }}>
+          {activeTab === 'speaking' && <SpeakingTab userClass={userClass} />}
+
+          {activeTab === 'aimath' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+              <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.5rem', color: 'white', marginBottom: '0.5rem' }}>AI Math Solver</h3>
+                <p style={{ color: 'var(--text-secondary)' }}>Type any math problem and get a step-by-step solution.</p>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                <input 
+                  type="text" 
+                  value={aiMathInput}
+                  onChange={(e) => setAiMathInput(e.target.value)}
+                  placeholder="e.g. Solve 2x + 5 = 15 or What is the area of a circle with radius 4?"
+                  style={{ flex: 1, padding: '1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', color: 'white', outline: 'none', fontSize: '1rem' }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') solveMath(); }}
+                />
+                <button 
+                  onClick={solveMath}
+                  disabled={isSolvingMath || !aiMathInput.trim()}
+                  style={{ padding: '0 1.5rem', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', cursor: isSolvingMath || !aiMathInput.trim() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold', opacity: isSolvingMath || !aiMathInput.trim() ? 0.7 : 1 }}
+                >
+                  {isSolvingMath ? <Loader2 size={20} className="spin" /> : <Sparkles size={20} />}
+                  Solve
+                </button>
+              </div>
+              
+              {aiMathSolution && (
+                <div style={{ background: 'rgba(99, 102, 241, 0.05)', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                  <div style={{ color: '#8b5cf6', fontWeight: 'bold', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Sparkles size={18} /> Step-by-Step Solution
+                  </div>
+                  <div style={{ color: 'white', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontSize: '1.05rem' }}>
+                    {aiMathSolution}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
         {activeTab === 'calculator' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -1160,6 +1283,7 @@ const StudyTools = ({ userClass, initialTab = 'calculator', isFullscreen = false
             )}
           </div>
         )}
+        </div>
       </div>
     </section>
   );

@@ -1,0 +1,3467 @@
+[
+  {
+    "classNum": 1,
+    "subject": "Mathematics",
+    "title": "Shapes and Space"
+  },
+  {
+    "classNum": 1,
+    "subject": "Mathematics",
+    "title": "Numbers from One to Nine"
+  },
+  {
+    "classNum": 1,
+    "subject": "Mathematics",
+    "title": "Addition"
+  },
+  {
+    "classNum": 1,
+    "subject": "Mathematics",
+    "title": "Subtraction"
+  },
+  {
+    "classNum": 1,
+    "subject": "Mathematics",
+    "title": "Numbers from Ten to Twenty"
+  },
+  {
+    "classNum": 1,
+    "subject": "English",
+    "title": "My Family and Me"
+  },
+  {
+    "classNum": 1,
+    "subject": "English",
+    "title": "Two Little Hands"
+  },
+  {
+    "classNum": 1,
+    "subject": "English",
+    "title": "Greetings"
+  },
+  {
+    "classNum": 1,
+    "subject": "English",
+    "title": "Picture Time"
+  },
+  {
+    "classNum": 1,
+    "subject": "Hindi",
+    "title": "Meena’s Family"
+  },
+  {
+    "classNum": 1,
+    "subject": "Hindi",
+    "title": "Grandparents"
+  },
+  {
+    "classNum": 1,
+    "subject": "Hindi",
+    "title": "Welcoming Reema"
+  },
+  {
+    "classNum": 1,
+    "subject": "EVS",
+    "title": "All About Me"
+  },
+  {
+    "classNum": 1,
+    "subject": "EVS",
+    "title": "My Body and Sense Organs"
+  },
+  {
+    "classNum": 1,
+    "subject": "EVS",
+    "title": "My Family and Home"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "What is Long, What is Round?"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "Counting in Groups"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "How Much Can You Carry?"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "Counting in Tens"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "Patterns"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "Footprints"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "Jugs and Mugs"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "Tens and Ones"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "My Funday"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "Add Our Points"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "Lines and Lines"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "Give and Take"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "The Longest Step"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "Birds Come, Birds Go"
+  },
+  {
+    "classNum": 2,
+    "subject": "Mathematics",
+    "title": "How Many Ponytails?"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "First Day at School"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "Haldi's Adventure"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "I am Lucky!"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "I Want"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "A Smile"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "The Wind and the Sun"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "Rain"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "Storm in the Garden"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "Zoo Manners"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "Funny Bunny"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "Mr. Nobody"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "Curlylocks and the Three Bears"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "On My Blackboard I can Draw"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "Make it Shorter"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "I am the Music Man"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "The Mumbai Musicians"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "Granny Granny Please Comb my Hair"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "The Magic Porridge Pot"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "Strange Talk"
+  },
+  {
+    "classNum": 2,
+    "subject": "English",
+    "title": "The Grasshopper and the Ant"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "ऊँट चला"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "भालू ने खेली फुटबॉल"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "म्याऊँ, म्याऊँ !!"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "अधिक बलवान कौन?"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "दोस्त की मदद"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "बहुत हुआ"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "मेरी किताब"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "तितली और कली"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "बुलबुल"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "मीठी सारंगी"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "टेसू राजा बीच बाजार"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "बस के नीचे बाघ"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "सूरज जल्दी आना जी"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "नटखट चूहा"
+  },
+  {
+    "classNum": 2,
+    "subject": "Hindi",
+    "title": "एक्की-दोक्की"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Where to Look From"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Fun With Numbers"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Give and Take"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Long and Short"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Shapes and Designs"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Fun With Give and Take"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Time Goes On"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Who is Heavier?"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "How Many Times?"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Play With Patterns"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Jugs and Mugs"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Can We Share?"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Smart Charts"
+  },
+  {
+    "classNum": 3,
+    "subject": "Mathematics",
+    "title": "Rupees and Paise"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Poonam's Day Out"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "The Plant Fairy"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Water O' Water!"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Our First School"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Chhotu's House"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Foods We Eat"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Saying Without Speaking"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Flying High"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "It's Raining"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "What is Cooking"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "From Here to There"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Work We Do"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Sharing Our Feelings"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "The Story of Food"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Making Pots"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Games We Play"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Here Comes a Letter"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "A House Like This!"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Our Friends - Animals"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Drop by Drop"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Families can be Different"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Left-Right"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "A Beautiful Cloth"
+  },
+  {
+    "classNum": 3,
+    "subject": "EVS",
+    "title": "Web of Life"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Good Morning"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "The Magic Garden"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Bird Talk"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Nina and the Baby Sparrows"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Little by Little"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "The Enormous Turnip"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Sea Song"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "A Little Fish Story"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "The Balloon Man"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Yellow Butterfly"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Trains"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Story of the Road"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Puppy and I"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Little Tiger Big Tiger"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "What's in the Mailbox?"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "My Silly Sister"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Don't Tell"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "He is My Brother"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "How Creatures Move"
+  },
+  {
+    "classNum": 3,
+    "subject": "English",
+    "title": "Ship of the Desert"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "कक्कू"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "शेखीबाज़ मक्खी"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "चाँद वाली अम्मा"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "मन करता है"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "बहादुर बित्तो"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "हमसे सब कहते"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "टिपटिपवा"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "बंदर बाँट"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "अक्ल बड़ी या भैंस"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "क्योंजीमल और कैसे-कैसलिया"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "मीरा बहन और बाघ"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "जब मुझे साँप ने काटा"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "मिर्च का मज़ा"
+  },
+  {
+    "classNum": 3,
+    "subject": "Hindi",
+    "title": "सबसे अच्छा पेड़"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "Building with Bricks"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "Long and Short"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "A Trip to Bhopal"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "Tick-Tick-Tick"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "The Way The World Looks"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "The Junk Seller"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "Jugs and Mugs"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "Carts and Wheels"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "Halves and Quarters"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "Play with Patterns"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "Tables and Shares"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "How Heavy? How Light?"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "Fields and Fences"
+  },
+  {
+    "classNum": 4,
+    "subject": "Mathematics",
+    "title": "Smart Charts"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Going to School"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Ear to Ear"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "A Day with Nandu"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "The Story of Amrita"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Anita and the Honeybees"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Omana's Journey"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "From the Window"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Reaching Grandmother's House"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Changing Families"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Hu Tu Tu Hu Tu Tu"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "The Valley of Flowers"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Changing Times"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "A River's Tale"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Basva's Farm"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "From Market to Home"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "A Busy Month"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Nandita in Mumbai"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Too Much Water Too Little Water"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Abdul in the Garden"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Eating Together"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Food and Fun"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "The World in my Home"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Pochampalli"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Home and Abroad"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Spicy Riddles"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Defence Officer: Wahida"
+  },
+  {
+    "classNum": 4,
+    "subject": "EVS",
+    "title": "Chuskit Goes to School"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Wake Up!"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Neha's Alarm Clock"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Noses"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "The Little Fir Tree"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Run!"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Nasruddin's Aim"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Why?"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Alice in Wonderland"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Don't be Afraid of the Dark"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Helen Keller"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "The Donkey"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "I had a Little Pony"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "The Milkman's Cow"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Hiawatha"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "The Scholar's Mother Tongue"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "A Watering Rhyme"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "The Giving Tree"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Books"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Going to Buy a Book"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "The Naughty Boy"
+  },
+  {
+    "classNum": 4,
+    "subject": "English",
+    "title": "Pinocchio"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "मन के भोले-भाले बादल"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "जैसा सवाल वैसा जवाब"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "किरमिच की गेंद"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "पापा जब बच्चे थे"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "दोस्त की पोशाक"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "नाव बनाओ नाव बनाओ"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "दान का हिसाब"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "कौन?"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "स्वतंत्रता की ओर"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "थप्प रोटी थप्प दाल"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "पढ़क्कू की सूझ"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "सुनीता की पहिया कुर्सी"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "हुदहुद"
+  },
+  {
+    "classNum": 4,
+    "subject": "Hindi",
+    "title": "मुफ़्त ही मुफ़्त"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "The Fish Tale"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Shapes and Angles"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "How Many Squares?"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Parts and Wholes"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Does it Look the Same?"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Be My Multiple I'll be Your Factor"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Can You See the Pattern?"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Mapping Your Way"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Boxes and Sketches"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Tenths and Hundredths"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Area and its Boundary"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Smart Charts"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "Ways to Multiply and Divide"
+  },
+  {
+    "classNum": 5,
+    "subject": "Mathematics",
+    "title": "How Big? How Heavy?"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Super Senses"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "A Snake Charmer's Story"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "From Tasting to Digesting"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Mangoes Round the Year"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Seeds and Seeds"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Every Drop Counts"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Experiments with Water"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "A Treat for Mosquitoes"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Up You Go!"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Walls Tell Stories"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Sunita in Space"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "What if it Finishes..."
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "A Shelter so High!"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "When the Earth Shook!"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Blow Hot Blow Cold"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Who will do this Work?"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Across the Wall"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "No Place for Us?"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "A Seed tells a Farmer's Story"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Whose Forests?"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "Like Father Like Daughter"
+  },
+  {
+    "classNum": 5,
+    "subject": "EVS",
+    "title": "On the Move Again"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Ice-cream Man"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Wonderful Waste!"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Teamwork"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Flying Together"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "My Shadow"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Robinson Crusoe Discovers a footprint"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Crying"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "My Elder Brother"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "The Lazy Frog"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Rip Van Winkle"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Class Discussion"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "The Talkative Barber"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Topsy-turvy Land"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Gulliver's Travels"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Nobody's Friend"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "The Little Bully"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Sing a Song of People"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Around the World"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Malu Bhalu"
+  },
+  {
+    "classNum": 5,
+    "subject": "English",
+    "title": "Who Will be Ningthou?"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "राख की रस्सी"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "फ़सलों के त्योहार"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "खिलौनेवाला"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "नन्हा फ़नकार"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "जहाँ चाह वहाँ राह"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "चिट्ठी का सफ़र"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "डाकिए की कहानी कंवरसिंह की जुबानी"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "वे दिन भी क्या दिन थे"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "एक माँ की बेबसी"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "एक दिन की बादशाहत"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "चावल की रोटियाँ"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "गुरु और चेला"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "स्वामी की दादी"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "बाघ आया उस रात"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "बिशन की दिलेरी"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "पानी रे पानी"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "छोटी-सी हमारी नदी"
+  },
+  {
+    "classNum": 5,
+    "subject": "Hindi",
+    "title": "चुनौती हिमालय की"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Knowing Our Numbers"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Whole Numbers"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Playing With Numbers"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Basic Geometrical Ideas"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Understanding Elementary Shapes"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Integers"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Fractions"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Decimals"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Data Handling"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Mensuration"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Algebra"
+  },
+  {
+    "classNum": 6,
+    "subject": "Mathematics",
+    "title": "Ratio and Proportion"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "Components of Food"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "Sorting Materials into Groups"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "Separation of Substances"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "Getting to Know Plants"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "Body Movements"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "The Living Organisms and Their Surroundings"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "Motion and Measurement of Distances"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "Light Shadows and Reflections"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "Electricity and Circuits"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "Fun with Magnets"
+  },
+  {
+    "classNum": 6,
+    "subject": "Science",
+    "title": "Air Around Us"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "What Where How and When?"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "From Hunting-Gathering to Growing Food"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "In the Earliest Cities"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "What Books and Burials Tell Us"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Kingdoms Kings and an Early Republic"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "New Questions and Ideas"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "From a Kingdom to an Empire"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Villages Towns and Trade"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "New Empires and Kingdoms"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Buildings Paintings and Books"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "The Earth in the Solar System"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Globe: Latitudes and Longitudes"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Motions of the Earth"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Maps"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Major Domains of the Earth"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Our Country - India"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Understanding Diversity"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Diversity and Discrimination"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "What is Government?"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Panchayati Raj"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Rural Administration"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Urban Administration"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Rural Livelihoods"
+  },
+  {
+    "classNum": 6,
+    "subject": "Social Studies",
+    "title": "Urban Livelihoods"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "Who Did Patrick's Homework?"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "How the Dog Found Himself a New Master!"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "Taro's Reward"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "An Indian - American Woman in Space: Kalpana Chawla"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "A Different Kind of School"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "Who I Am"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "Fair Play"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "A Game of Chance"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "Desert Animals"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "The Banyan Tree"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "A Tale of Two Birds"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "The Friendly Mongoose"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "The Shepherd's Treasure"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "The Old-Clock Shop"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "Tansen"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "The Monkey and the Crocodile"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "The Wonder Called Sleep"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "A Pact with the Sun"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "What Happened to the Reptiles"
+  },
+  {
+    "classNum": 6,
+    "subject": "English",
+    "title": "A Strange Wrestling Match"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "वह चिड़िया जो"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "बचपन"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "नादान दोस्त"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "चाँद से थोड़ी-सी गप्पें"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "अक्षरों का महत्व"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "पार नज़र के"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "साथी हाथ बढ़ाना"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "ऐसे-ऐसे"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "टिकट अलबम"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "झाँसी की रानी"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "जो देखकर भी नहीं देखते"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "संसार पुस्तक है"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "मैं सबसे छोटी होऊँ"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "लोकगीत"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "नौकर"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "वन के मार्ग में"
+  },
+  {
+    "classNum": 6,
+    "subject": "Hindi",
+    "title": "साँस-साँस में बाँस"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Integers"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Fractions and Decimals"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Data Handling"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Simple Equations"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Lines and Angles"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "The Triangle and its Properties"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Congruence of Triangles"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Comparing Quantities"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Rational Numbers"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Practical Geometry"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Perimeter and Area"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Algebraic Expressions"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Exponents and Powers"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Symmetry"
+  },
+  {
+    "classNum": 7,
+    "subject": "Mathematics",
+    "title": "Visualising Solid Shapes"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Nutrition in Plants"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Nutrition in Animals"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Heat"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Acids Bases and Salts"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Physical and Chemical Changes"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Respiration in Organisms"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Transportation in Animals and Plants"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Reproduction in Plants"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Motion and Time"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Electric Current and its Effects"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Light"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Forests: Our Lifeline"
+  },
+  {
+    "classNum": 7,
+    "subject": "Science",
+    "title": "Wastewater Story"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Introduction: Tracing Changes Through a Thousand Years"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "New Kings and Kingdoms"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Delhi: 12th to 15th Century"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "The Mughals (16th to 17th Century)"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Rulers and Buildings"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Towns Traders and Craftspersons"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Tribes Nomads and Settled Communities"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Devotional Paths to the Divine"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "The Making of Regional Cultures"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "18th-Century Political Formations"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Environment"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Inside Our Earth"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Our Changing Earth"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Air"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Water"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Natural Vegetation and Wildlife"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Human Environment - Settlement Transport and Communication"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Human Environment Interactions - The Tropical and Subtropical R..."
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Life in the Deserts"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "On Equality"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Role of the Government in Health"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "How the State Government Works"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Growing up as Boys and Girls"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Women Change the World"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Understanding Media"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Markets Around Us"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "A Shirt in the Market"
+  },
+  {
+    "classNum": 7,
+    "subject": "Social Studies",
+    "title": "Struggles for Equality"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "Three Questions"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "A Gift of Chappals"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "Gopal and the Hilsa Fish"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "The Ashes That Made Trees Bloom"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "Quality"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "Expert Detectives"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "The Invention of Vita-Wonk"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "Fire: Friend and Foe"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "A Bicycle in Good Repair"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "The Story of Cricket"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "The Tiny Teacher"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "Bringing up Kari"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "The Desert"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "The Cop and the Anthem"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "Golu Grows a Nose"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "I Want Something in a Cage"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "Chandni"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "The Bear Story"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "A Tiger in the House"
+  },
+  {
+    "classNum": 7,
+    "subject": "English",
+    "title": "An Alien Hand"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "हम पंछी उन्मुक्त गगन के"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "दादी माँ"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "हिमालय की बेटियां"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "कठपुतली"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "मिठाईवाला"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "रक्त और हमारा शरीर"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "पापा खो गए"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "शाम-एक किसान"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "चिड़िया की बच्ची"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "अपूर्व अनुभव"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "रहीम की दोहे"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "कंचा"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "एक तिनका"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "खानपान की बदलती तस्वीर"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "नीलकंठ"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "भोर और बरखा"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "वीर कुंवर सिंह"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "संघर्ष के कारण मैं तुनुकमिज़ाज हो गया: धनराज"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "आश्रम का अनुमानित व्यय"
+  },
+  {
+    "classNum": 7,
+    "subject": "Hindi",
+    "title": "विप्लव गायन"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Rational Numbers"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Linear Equations in One Variable"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Understanding Quadrilaterals"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Practical Geometry"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Data Handling"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Squares and Square Roots"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Cubes and Cube Roots"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Comparing Quantities"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Algebraic Expressions and Identities"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Visualising Solid Shapes"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Mensuration"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Exponents and Powers"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Direct and Inverse Proportions"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Factorisation"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Introduction to Graphs"
+  },
+  {
+    "classNum": 8,
+    "subject": "Mathematics",
+    "title": "Playing with Numbers"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Crop Production and Management"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Microorganisms: Friend and Foe"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Synthetic Fibres and Plastics"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Materials: Metals and Non-Metals"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Coal and Petroleum"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Combustion and Flame"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Conservation of Plants and Animals"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Cell — Structure and Functions"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Reproduction in Animals"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Reaching the Age of Adolescence"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Force and Pressure"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Friction"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Sound"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Chemical Effects of Electric Current"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Some Natural Phenomena"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Light"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Stars and the Solar System"
+  },
+  {
+    "classNum": 8,
+    "subject": "Science",
+    "title": "Pollution of Air and Water"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "How When and Where"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "From Trade to Territory"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Ruling the Countryside"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Tribals Dikus and the Vision of a Golden Age"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "When People Rebel"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Colonialism and the City"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Weavers Iron Smelters and Factory Owners"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Civilising the Native Educating the Nation"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Women Caste and Reform"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "The Changing World of Visual Arts"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "The Making of the National Movement: 1870s-1947"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "India After Independence"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Resources"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Land Soil Water Natural Vegetation and Wildlife Resources"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Mineral and Power Resources"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Agriculture"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Industries"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Human Resources"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "The Indian Constitution"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Understanding Secularism"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Why do we need a Parliament?"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Understanding Laws"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Judiciary"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Understanding Our Criminal Justice System"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Understanding Marginalisation"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Confronting Marginalisation"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Public Facilities"
+  },
+  {
+    "classNum": 8,
+    "subject": "Social Studies",
+    "title": "Law and Social Justice"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The Best Christmas Present in the World"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The Tsunami"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "Glimpses of the Past"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "Bepin Choudhury's Lapse of Memory"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The Summit Within"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "This is Jody's Fawn"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "A Visit to Cambridge"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "A Short Monsoon Diary"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The Great Stone Face - I"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The Great Stone Face - II"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "How the Camel got his hump"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "Children at work"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The Selfish Giant"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The treasure within"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "Princess September"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The fight"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The open window"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "Jalebis"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The comet - I"
+  },
+  {
+    "classNum": 8,
+    "subject": "English",
+    "title": "The comet - II"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "ध्वनि"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "लाख की चूड़ियाँ"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "बस की यात्रा"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "दीवानों की हस्ती"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "चिट्ठियों की अनूठी दुनिया"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "भगवान के डाकिए"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "क्या निराश हुआ जाए"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "यह सबसे कठिन समय नहीं"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "कबीर की साखियाँ"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "कामचोर"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "जब सिनेमा ने बोलना सीखा"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "सुदामा चरित"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "जहाँ पहिया है"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "अकबरी लोटा"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "सूर के पद"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "पानी की कहानी"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "बाज और साँप"
+  },
+  {
+    "classNum": 8,
+    "subject": "Hindi",
+    "title": "टोपी"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Number Systems"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Polynomials"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Coordinate Geometry"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Linear Equations in Two Variables"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Introduction to Euclid's Geometry"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Lines and Angles"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Triangles"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Quadrilaterals"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Areas of Parallelograms and Triangles"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Circles"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Constructions"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Heron's Formula"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Surface Areas and Volumes"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Statistics"
+  },
+  {
+    "classNum": 9,
+    "subject": "Mathematics",
+    "title": "Probability"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Matter in Our Surroundings"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Is Matter Around Us Pure"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Atoms and Molecules"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Structure of the Atom"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "The Fundamental Unit of Life"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Tissues"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Diversity in Living Organisms"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Motion"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Force and Laws of Motion"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Gravitation"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Work and Energy"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Sound"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Why Do We Fall Ill"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Natural Resources"
+  },
+  {
+    "classNum": 9,
+    "subject": "Science",
+    "title": "Improvement in Food Resources"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "The French Revolution"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Socialism in Europe and the Russian Revolution"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Nazism and the Rise of Hitler"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Forest Society and Colonialism"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Pastoralists in the Modern World"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "India - Size and Location"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Physical Features of India"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Drainage"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Climate"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Natural Vegetation and Wild Life"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Population"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "What is Democracy? Why Democracy?"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Constitutional Design"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Electoral Politics"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Working of Institutions"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Democratic Rights"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "The Story of Village Palampur"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "People as Resource"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Poverty as a Challenge"
+  },
+  {
+    "classNum": 9,
+    "subject": "Social Studies",
+    "title": "Food Security in India"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Fun They Had"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Sound of Music"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Little Girl"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "A Truly Beautiful Mind"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Snake and the Mirror"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "My Childhood"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "Packing"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "Reach for the Top"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Bond of Love"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "Kathmandu"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "If I Were You"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Lost Child"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Adventures of Toto"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "Iswaran the Storyteller"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "In the Kingdom of Fools"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Happy Prince"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "Weathering the Storm in Ersama"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Last Leaf"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "A House Is Not a Home"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Accidental Tourist"
+  },
+  {
+    "classNum": 9,
+    "subject": "English",
+    "title": "The Beggar"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "दो बैलों की कथा"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "ल्हासा की ओर"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "उपभोक्तावाद की संस्कृति"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "साँवले सपनों की याद"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "प्रेमचंद के फटे जूते"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "मेरे बचपन के दिन"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "एक कुत्ता और एक मैना"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "साखियाँ एवं सबद"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "वाख"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "सवैया"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "कैदी और कोकिला"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "ग्राम श्री"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "चंद्र गहना से लौटती बेर"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "मेघ आए"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "यमराज की दिशा"
+  },
+  {
+    "classNum": 9,
+    "subject": "Hindi",
+    "title": "बच्चे काम पर जा रहे हैं"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "A Letter to God"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "Nelson Mandela: Long Walk to Freedom"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "Two Stories about Flying"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "From the Diary of Anne Frank"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "The Hundred Dresses - I"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "The Hundred Dresses - II"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "Glimpses of India"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "Mijbil the Otter"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "Madam Rides the Bus"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "The Sermon at Benares"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "The Proposal"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "A Triumph of Surgery"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "The Thief's Story"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "The Midnight Visitor"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "A Question of Trust"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "Footprints without Feet"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "The Making of a Scientist"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "The Necklace"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "The Hack Driver"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "Bholi"
+  },
+  {
+    "classNum": 10,
+    "subject": "English",
+    "title": "The Book That Saved the Earth"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "पद (सूरदास)"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "राम-लक्ष्मण-परशुराम संवाद"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "सवैया और कवित्त"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "आत्मकथ्य"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "उत्साह और अट नहीं रही है"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "यह दंतुरित मुसकान और फसल"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "छाया मत छूना"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "कन्यादान"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "संगतकार"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "नेताजी का चश्मा"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "बालगोबिन भगत"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "लखनवी अंदाज़"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "मानवीय करुणा की दिव्या चमक"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "एक कहानी यह भी"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "स्त्री शिक्षा के विरोधी कुतर्कों का खंडन"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "नौबतखाने में इबादत"
+  },
+  {
+    "classNum": 10,
+    "subject": "Hindi",
+    "title": "संस्कृति"
+  }
+]

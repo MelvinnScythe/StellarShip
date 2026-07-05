@@ -47,7 +47,7 @@ const Navbar = ({ user, onLogout, unreadMessages = 0, pendingFriendRequests = 0 
     { name: 'Features', path: '/home#features' },
     { name: 'Subjects', path: '/home#subjects' },
     { name: 'Progress', path: '/home#progress' },
-    { name: 'Speaking', path: '/speaking' }
+    { name: 'Tools', path: '/tools' }
   ];
 
   const mobileNavLinks = [
@@ -222,20 +222,21 @@ const Navbar = ({ user, onLogout, unreadMessages = 0, pendingFriendRequests = 0 
             initial={{ opacity: 0, x: '100%' }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }}
             style={{
               position: 'fixed',
               top: 0,
               right: 0,
               width: '80%',
+              maxWidth: '400px',
               height: '100vh',
               background: 'rgba(10, 10, 15, 0.98)',
               backdropFilter: 'blur(20px)',
-              padding: '6rem 2rem 2rem',
+              padding: '5rem 2rem 2rem',
               zIndex: 99,
               display: 'flex',
               flexDirection: 'column',
-              gap: '2rem',
+              gap: '1rem',
               borderLeft: '1px solid var(--glass-border)'
             }}
           >

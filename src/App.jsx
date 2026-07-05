@@ -3576,10 +3576,10 @@ function App() {
                 "xp": 15
         }
 ]
-    };;;
+    };
     const classData = ncertData[classNum] || ncertData[1];
     return classData.flatMap((chapter) => {
-      return [1, 2, 3, 4, 5, 6].map(lessonNum => {
+      return [1, 2, 3, 4, 5].map(lessonNum => {
         const lessonInfo = getLessonContent(chapter.title, chapter.subject, lessonNum, false, classNum);
         let subtopicTitle = `Lesson ${lessonNum}`;
         if (lessonInfo.lessons && lessonInfo.lessons[lessonNum - 1]) {
@@ -3592,7 +3592,7 @@ function App() {
         
         // Final fallback if undefined
         if (!subtopicTitle || subtopicTitle.includes("undefined")) {
-           const defaultTopics = ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"];
+           const defaultTopics = ["Introduction & Concept Deep-Dive", "Key Concepts - Part 1", "Key Concepts - Part 2", "Key Concepts - Part 3 & Activities", "Final Assessment"];
            subtopicTitle = defaultTopics[lessonNum - 1] || `Lesson ${lessonNum}`;
         }
         return {
@@ -3602,7 +3602,7 @@ function App() {
           subject: chapter.subject,
           classNum: classNum,
           completed: false,
-          xp: Math.round(chapter.xp / 6),
+          xp: Math.round(chapter.xp / 5),
           lessonNum: lessonNum,
           subtopic: subtopicTitle
         };
@@ -3734,19 +3734,9 @@ function App() {
             />
           ) : <Navigate to="/" />
         } />
-        <Route path="/speaking" element={
+        <Route path="/tools" element={
           currentUser ? (
-            <div style={{ padding: '2rem', minHeight: '100vh' }}>
-               <button 
-                onClick={() => navigate('/home')}
-                style={{ 
-                  marginBottom: '2rem', background: 'rgba(255,255,255,0.05)', color: 'white', 
-                  border: '1px solid var(--glass-border)', padding: '0.75rem 1.5rem', 
-                  borderRadius: '100px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem'
-                }}
-              >
-                ← Back to Mission Control
-              </button>
+            <div style={{ paddingTop: '80px', height: '100vh', display: 'flex', flexDirection: 'column' }}>
               <StudyTools userClass={selectedClass} initialTab="speaking" isFullscreen={true} />
             </div>
           ) : <Navigate to="/" />
@@ -3763,12 +3753,15 @@ function App() {
         } />
       </Routes>
 
+      <div className="star-field" />
+      {/* Floating AI Tutor Chatbot */}
+      {currentUser && <AITutor userClass={selectedClass} />}
+
       {!isFullscreen && (
         <footer style={{ padding: '4rem 2rem', textAlign: 'center', borderTop: '1px solid var(--glass-border)', marginTop: '4rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
           <p>© 2026 StellarStudy. Launching your potential into the cosmos.</p>
         </footer>
       )}
-      {!isFullscreen && !isMessaging && <AITutor userClass={selectedClass} />}
     </div>
   );
 }

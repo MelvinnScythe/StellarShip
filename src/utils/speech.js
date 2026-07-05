@@ -1,10 +1,8 @@
 // ---------------------------------------------------------------------------
-// speech.js  –  TTS via Gemini Flash 2.5 Preview (direct from browser) with browser fallback
+// speech.js  –  TTS via backend Gemini route with browser fallback
 // ---------------------------------------------------------------------------
 
-const GEMINI_TTS_API_KEY = import.meta.env.VITE_GEMINI_API_KEY_TTS;
-const GEMINI_TTS_MODEL   = 'gemini-2.5-flash-preview-tts';
-const GEMINI_TTS_URL     = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TTS_MODEL}:generateContent`;
+const API_ROOT = import.meta.env.VITE_API_URL || '';
 
 // Subject name → BCP-47 language tag
 const SUBJECT_LANG_MAP = {
@@ -58,42 +56,6 @@ export const isSpeakingNow = () => {
 };
 
 /**
- * Convert raw Linear PCM (16-bit LE, mono) to a WAV Blob playable by <audio>.
- */
-function pcmToWavBlob(pcmBase64, sampleRate = 24000) {
-  const pcm = Uint8Array.from(atob(pcmBase64), c => c.charCodeAt(0));
-  const numChannels  = 1;
-  const bitsPerSample = 16;
-  const byteRate     = (sampleRate * numChannels * bitsPerSample) / 8;
-  const blockAlign   = (numChannels * bitsPerSample) / 8;
-  const dataSize     = pcm.byteLength;
-
-  const buf = new ArrayBuffer(44 + dataSize);
-  const view = new DataView(buf);
-
-  const write = (offset, str) => {
-    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
-  };
-
-  write(0,  'RIFF');
-  view.setUint32(4,  36 + dataSize, true);
-  write(8,  'WAVE');
-  write(12, 'fmt ');
-  view.setUint32(16, 16, true);           // PCM chunk size
-  view.setUint16(20, 1,  true);           // PCM format
-  view.setUint16(22, numChannels,   true);
-  view.setUint32(24, sampleRate,    true);
-  view.setUint32(28, byteRate,      true);
-  view.setUint16(32, blockAlign,    true);
-  view.setUint16(34, bitsPerSample, true);
-  write(36, 'data');
-  view.setUint32(40, dataSize, true);
-
-  new Uint8Array(buf).set(pcm, 44);
-  return new Blob([buf], { type: 'audio/wav' });
-}
-
-/**
  * Speak text using Gemini Flash 2.5 TTS Preview.
  * Falls back to browser SpeechSynthesis on error.
  *
@@ -114,13 +76,6 @@ export const speak = async (text, language = 'en-US', options = {}) => {
 
   // Stop any previous speech
   stopSpeaking();
-
-  if (!GEMINI_TTS_API_KEY) {
-    console.warn('[TTS] VITE_GEMINI_API_KEY_TTS not set – using browser fallback');
-    if (onStart) onStart();
-    _browserFallback(cleanText, langTag, onEnd);
-    return;
-  }
 
   const cacheKey = `${voiceName}|${cleanText}`;
 
@@ -145,19 +100,13 @@ export const speak = async (text, language = 'en-US', options = {}) => {
   }
 
   try {
-    const response = await fetch(`${GEMINI_TTS_URL}?key=${GEMINI_TTS_API_KEY}`, {
+    const response = await fetch(`${API_ROOT}/api/tts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: cleanText.slice(0, 5000) }] }],
-        generationConfig: {
-          responseModalities: ['AUDIO'],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName }
-            }
-          }
-        }
+        text: cleanText.slice(0, 5000),
+        language: langTag,
+        voiceName
       })
     });
 
@@ -166,18 +115,7 @@ export const speak = async (text, language = 'en-US', options = {}) => {
       throw new Error(err?.error?.message || `HTTP ${response.status}`);
     }
 
-    const data = await response.json();
-    const audioPart = data?.candidates?.[0]?.content?.parts?.find(
-      p => p.inlineData?.mimeType?.startsWith('audio/')
-    );
-    if (!audioPart) throw new Error('No audio data in Gemini response');
-
-    // Parse sample rate from mime type (e.g. "audio/L16;rate=24000")
-    let sampleRate = 24000;
-    const rateMatch = audioPart.inlineData.mimeType.match(/rate=(\d+)/);
-    if (rateMatch) sampleRate = parseInt(rateMatch[1], 10);
-
-    const wavBlob = pcmToWavBlob(audioPart.inlineData.data, sampleRate);
+    const wavBlob = await response.blob();
     const url = URL.createObjectURL(wavBlob);
     audioCache.set(cacheKey, url);
     

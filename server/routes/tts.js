@@ -44,7 +44,7 @@ function pcmToWav(pcmBuffer, sampleRate = 24000, numChannels = 1, bitsPerSample 
 // @desc    Generate speech using Gemini 2.5 Flash TTS Preview
 // @access  Public
 router.post('/', async (req, res) => {
-  const { text, language = 'en-US' } = req.body;
+  const { text, language = 'en-US', voiceName: requestedVoiceName } = req.body;
 
   if (!text || typeof text !== 'string' || text.trim().length === 0) {
     return res.status(400).json({ error: 'text is required' });
@@ -55,7 +55,7 @@ router.post('/', async (req, res) => {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
   }
 
-  const voiceName = VOICE_MAP[language] || VOICE_MAP['default'];
+  const voiceName = requestedVoiceName || VOICE_MAP[language] || VOICE_MAP['default'];
 
   const requestBody = JSON.stringify({
     contents: [

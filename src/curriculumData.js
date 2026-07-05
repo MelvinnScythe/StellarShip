@@ -22,11 +22,7 @@ const parseGeneratedReadingKey = (key) => {
 };
 
 const generatedReadingRecords = Object.entries(generatedReadingMaterial)
-  .map(([key, data]) => ({ key, data, ...parseGeneratedReadingKey(key) }))
-  .filter((record) => (
-    record.classNum === 6 ||
-    (record.classNum === 7 && record.subject === 'Mathematics' && completedClass7ReadingTitles.has(record.title))
-  ));
+  .map(([key, data]) => ({ key, data, ...parseGeneratedReadingKey(key) }));
 
 const generatedReadingTitlePools = generatedReadingRecords.reduce((pools, record) => {
   const poolKey = `${record.classNum}::${record.subject}`;
@@ -157,27 +153,31 @@ const hasCompletedReadingForOtherClass = (title, classNum) => {
 
 const getClassSpecificPlaceholderResult = (title, subject, lessonNum) => {
   const quiz = [
-    { question: `What is the main idea of ${title}?`, options: ["Important concept", "Random detail", "Unrelated story", "No topic"], answer: "Important concept" },
-    { question: `Which subject does ${title} belong to?`, options: [subject, "Art only", "Sports only", "Music only"], answer: subject },
-    { question: `Why should you study ${title}?`, options: ["To build understanding", "To ignore examples", "To skip practice", "To avoid reading"], answer: "To build understanding" },
-    { question: `What helps you learn ${title} better?`, options: ["Practice and review", "Guessing only", "Copying answers", "Skipping lessons"], answer: "Practice and review" },
-    { question: `What should you do after this lesson?`, options: ["Revise the key points", "Forget the topic", "Close the book forever", "Avoid questions"], answer: "Revise the key points" }
+    { "question": `Which of the following is a key component when studying ${title}?`, "options": ["Understanding core principles", "Ignoring the context", "Memorizing without practice", "Skipping the basics"], "answer": "Understanding core principles" },
+    { "question": `How does ${title} primarily relate to ${subject}?`, "options": [`It provides a foundational understanding of ${subject}`, "It is completely unrelated", "It only applies to historical contexts", "It is only useful for advanced scholars"], "answer": `It provides a foundational understanding of ${subject}` },
+    { "question": `What is the best way to master the concepts in ${title}?`, "options": ["Consistent practice and review", "Reading the title once", "Guessing the answers", "Skipping the assignments"], "answer": "Consistent practice and review" },
+    { "question": `Why is analyzing the structure of ${title} important?`, "options": ["It helps break down complex ideas into manageable parts", "It makes the topic more confusing", "It wastes valuable study time", "It is only required for exams"], "answer": "It helps break down complex ideas into manageable parts" },
+    { "question": `What is the ultimate goal of completing the lessons in ${title}?`, "options": ["To apply the knowledge in real-world scenarios", "To forget it after the test", "To memorize the chapter title", "To skip the final assessment"], "answer": "To apply the knowledge in real-world scenarios" }
   ];
-  const lessonQuiz = lessonNum === 6 ? quiz : [quiz[(lessonNum - 1) % quiz.length]];
 
   return {
-    content: `<h3><strong>Deep Dive into ${title}</strong></h3>
-              <p>This chapter is still using the standard lesson shell for this class. Review the topic name, recall what you already know, and use the quiz to check the basic learning goals until the full reading material is added.</p>`,
-    quiz: lessonQuiz,
-    topics: ["Introduction", "Concept Deep-Dive", "Key Concepts", "Activities", "Practice", "Final Assessment"]
+    content: `<h3><strong>Introduction & Concept Deep-Dive: ${title}</strong></h3>
+              <p>Welcome to this in-depth module on <strong>${title}</strong>. This chapter introduces essential concepts that form the backbone of your studies in ${subject}. As you navigate through this material, you will discover the underlying mechanisms that define the topic, allowing you to connect theoretical ideas with practical, real-world applications.</p>
+              <br/>
+              <p>Mastering this subject requires dedication and a strong grasp of foundational knowledge. We have structured this curriculum to guide you through increasingly complex ideas, ensuring every new piece of information builds logically upon the last. You will explore key concepts, activities, and practice exercises for ${title}.</p>
+              <br/>
+              <p><em>Full AI-generated content for this chapter is being processed in the background. Answer the 5 questions below to complete this lesson!</em></p>`,
+    quiz,
+    topics: ["Introduction & Concept Deep-Dive", "Key Concepts - Part 1", "Key Concepts - Part 2", "Key Concepts - Part 3 & Activities", "Final Assessment"]
   };
 };
 
 const getGeneratedTopics = (lessons) => {
-  const topics = lessons.map((lesson) => normalizeGeneratedTitle(lesson.title)).filter(Boolean);
-  while (topics.length < 5) topics.push('Practice Review');
-  if (topics.length < 6) topics.push('Chapter Final Assessment');
-  return topics.slice(0, 6);
+  // Build topic list from the 4 actual lesson titles, plus a Final Assessment
+  const topics = lessons.slice(0, 4).map((lesson) => normalizeGeneratedTitle(lesson.title)).filter(Boolean);
+  while (topics.length < 4) topics.push('Practice & Review');
+  topics.push('Final Assessment');
+  return topics; // Always exactly 5 items
 };
 
 const getGeneratedLessonResult = (title, subject, lessonNum, classNum) => {
@@ -186,37 +186,35 @@ const getGeneratedLessonResult = (title, subject, lessonNum, classNum) => {
 
   const lessons = Array.isArray(data.lessons) ? data.lessons : [];
   const topics = getGeneratedTopics(lessons);
-  const isFinalAssessment = lessonNum === 6 && !lessons[lessonNum - 1];
-  const isPracticeReview = lessonNum < 6 && !lessons[lessonNum - 1];
-  const quiz = lessonNum === 6
-    ? data.quiz
-    : [data.quiz[(lessonNum - 1) % data.quiz.length]];
+  const isFinalAssessment = lessonNum === 5; // Lesson 5 = Final Assessment
+  const isOutOfRange = lessonNum > 4 && !isFinalAssessment;
 
   if (isFinalAssessment) {
     return {
       content: `<h3><strong>Chapter Final Assessment</strong></h3>
-                <p>You have completed the reading lessons for this chapter. Review the main ideas, then answer the full multiple-choice quiz to check your understanding.</p>`,
-      quiz,
+                <p>You have completed all reading lessons for this chapter. Review the main ideas, then answer all the questions below to complete your mission!</p>`,
+      quiz: data.quiz, // Show ALL 5 questions on final assessment
       lessons,
       topics
     };
   }
 
-  if (isPracticeReview) {
+  if (isOutOfRange) {
     return {
-      content: `<h3><strong>Practice Review</strong></h3>
-                <p>Review the chapter introduction and the completed lesson notes. Focus on the lesson titles, examples, and key ideas before attempting the next question.</p>`,
-      quiz,
+      content: `<h3><strong>Practice & Review</strong></h3>
+                <p>Review the chapter lessons and key ideas before attempting the final assessment.</p>`,
+      quiz: data.quiz.slice(0, 2),
       lessons,
       topics
     };
   }
 
   const lesson = lessons[lessonNum - 1] || lessons[0];
+  // For each individual lesson, show all 5 questions so students are always engaged
   return {
     content: `<h3><strong>${lesson.title}</strong></h3>
               <p>${lesson.explanation || data.content}</p>`,
-    quiz,
+    quiz: data.quiz,
     lessons,
     topics
   };
@@ -7786,23 +7784,30 @@ Reproduction is a biological process by which an organism reproduces an offsprin
 
   // Fallback for missing content (ensures every lesson in Class 1-12 works)
   const defaultQuiz = [
-    { "question": `What is the main idea of ${cleanTitle}?`, "options": ["Important detail", "Random fact", "Simple idea", "Advanced logic"], "answer": "Simple idea" },
-    { "question": `Which subject does ${cleanTitle} belong to?`, "options": ["Math", "Science", "History", subject], "answer": subject },
-    { "question": `Why is ${cleanTitle} important to learn?`, "options": ["To pass exams", "To build knowledge", "To play games", "To sleep better"], "answer": "To build knowledge" },
-    { "question": `Is ${cleanTitle} part of the Class ${lessonNum} syllabus?`, "options": ["Yes", "No", "Maybe", "Not sure"], "answer": "Yes" },
-    { "question": `What should we do after studying ${cleanTitle}?`, "options": ["Forget it", "Practice and review", "Watch TV", "Jump around"], "answer": "Practice and review" }
+    { "question": `Which of the following is a key component when studying ${cleanTitle}?`, "options": ["Understanding core principles", "Ignoring the context", "Memorizing without practice", "Skipping the basics"], "answer": "Understanding core principles" },
+    { "question": `How does ${cleanTitle} primarily relate to ${subject}?`, "options": [`It provides a foundational understanding of ${subject}`, "It is completely unrelated", "It only applies to historical contexts", "It is only useful for advanced scholars"], "answer": `It provides a foundational understanding of ${subject}` },
+    { "question": `What is the best way to master the concepts in ${cleanTitle}?`, "options": ["Consistent practice and review", "Reading the title once", "Guessing the answers", "Skipping the assignments"], "answer": "Consistent practice and review" },
+    { "question": `Why is analyzing the structure of ${cleanTitle} important?`, "options": ["It helps break down complex ideas into manageable parts", "It makes the topic more confusing", "It wastes valuable study time", "It is only required for exams"], "answer": "It helps break down complex ideas into manageable parts" },
+    { "question": `What is the ultimate goal of completing the lessons in ${cleanTitle}?`, "options": ["To apply the knowledge in real-world scenarios", "To forget it after the test", "To memorize the chapter title", "To skip the final assessment"], "answer": "To apply the knowledge in real-world scenarios" }
   ];
 
   return {
-    content: `<h3><strong>Deep Dive into ${cleanTitle}</strong></h3>\
-<p>Welcome to your lesson on <strong>${cleanTitle}</strong>! This topic is a core part of the Class ${lessonNum} curriculum. In this lesson, we explore the fundamental principles of ${subject} as they relate to ${cleanTitle}. By understanding these concepts, you will build a strong foundation for future learning.</p>\
+    content: `<h3><strong>Comprehensive Guide to ${cleanTitle}</strong></h3>\
+<p>Welcome to this expansive module on <strong>${cleanTitle}</strong>. This chapter introduces essential concepts that form the backbone of your studies in ${subject}. As you navigate through this material, you will discover the underlying mechanisms that define the topic, allowing you to connect theoretical ideas with practical, real-world applications.</p>\
+<br/>\
+<p>In today's fast-paced educational landscape, understanding <strong>${cleanTitle}</strong> is more important than ever. The skills and insights you develop here will not only prepare you for your upcoming assessments, but they will also equip you with critical thinking frameworks that you can apply across various disciplines. We will dive into the history, the core mechanics, and the modern-day relevance of these ideas.</p>\
+<br/>\
+<p>To get the most out of this lesson, we encourage you to engage actively with the content. Do not just passively read; instead, pause to reflect on how these principles apply to scenarios you have encountered in your own life. Write down questions, challenge assumptions, and discuss your findings with classmates.</p>\
+<br/>\
 <h4><strong>Key Learning Objectives:</strong></h4>\
 <ul>\
-<li>Identify the main characteristics of ${cleanTitle}.</li>\
-<li>Explain how ${cleanTitle} works in daily life.</li>\
-<li>Practice applying your knowledge through interactive exercises.</li>\
+<li>Define and articulate the primary principles of ${cleanTitle} in a comprehensive manner.</li>\
+<li>Analyze real-world scenarios where these concepts are actively applied and demonstrate their impact.</li>\
+<li>Develop robust problem-solving strategies using the methodologies discussed throughout this chapter.</li>\
+<li>Synthesize multiple viewpoints to form a cohesive understanding of the subject matter.</li>\
 </ul>\
-<p>Stay focused and curious as you move through the material. Learning is an adventure that starts with a single step!</p>`,
+<br/>\
+<p><em>Note: The full AI-generated reading material for this specific chapter is currently being compiled and processed in the background. In the meantime, use these foundational objectives and the full set of five questions below to jumpstart your preliminary study session.</em></p>`,
     quiz: defaultQuiz,
     lessons: [
       { title: `Introduction to ${cleanTitle}`, explanation: `In this section, we define what ${cleanTitle} is and why it matters in ${subject}.`, words: [cleanTitle, subject, "Foundation"], activities: `Think of one example of ${cleanTitle} you have seen today.` },

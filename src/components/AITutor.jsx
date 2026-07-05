@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Bot, User, Loader2, Maximize2, Minimize2, Settings, Volume2 } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -9,8 +8,7 @@ import 'katex/dist/katex.min.css';
 import TTSButton from './TTSButton';
 import { getAvailableVoices, setPreferredVoice } from '../utils/speech';
 
-// Initialize the Gemini API
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY_TEXT || import.meta.env.VITE_GEMINI_API_KEY);
+const API_ROOT = import.meta.env.VITE_API_URL || '';
 
 const AITutor = ({ userClass }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -67,23 +65,18 @@ const AITutor = ({ userClass }) => {
     setIsLoading(true);
 
     try {
-      // Using the latest flash model since 1.5 models are deprecated for new keys
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      
-      const prompt = `You are a friendly, encouraging AI tutor for a student in Class ${userClass || 'elementary/middle'}. 
-IMPORTANT FORMATTING RULES:
-1. Use markdown formatting freely.
-2. IMPORTANT: You MUST use LaTeX for math equations. Wrap inline math with a single dollar sign (e.g. $F = ma$) and block math with double dollar signs.
-3. Keep answers simple, easy to understand, and perfectly suited for their grade level.
+      const response = await fetch(`${API_ROOT}/api/ai/tutor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, userClass }),
+      });
 
-MOOD DETECTION:
-At the very beginning of your response, start with a mood tag in brackets. Choose ONE from: [MOOD: excited], [MOOD: happy], [MOOD: sad], [MOOD: serious], [MOOD: friendly], [MOOD: neutral], [MOOD: encouraging].
-Example: "[MOOD: encouraging] That's a great question! Let's solve it together..."
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Server error: ${response.status}`);
+      }
 
-Student: ${input}`;
-      
-      const result = await model.generateContent(prompt);
-      const fullText = result.response.text();
+      const { text: fullText } = await response.json();
       
       // Parse mood
       let mood = 'friendly';
@@ -97,7 +90,7 @@ Student: ${input}`;
       setMessages(prev => [...prev, { role: 'model', text: cleanText, mood }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: `Connection Error: ${error.message}. Please check if the Generative Language API is enabled for this key.`, mood: 'serious' }]);
+      setMessages(prev => [...prev, { role: 'model', text: `Connection Error: ${error.message}. Please make sure the backend is running.`, mood: 'serious' }]);
     } finally {
       setIsLoading(false);
     }
@@ -141,20 +134,21 @@ Student: ${input}`;
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             style={{
               position: 'fixed',
-              bottom: window.innerWidth < 768 ? '0' : '2rem',
-              right: window.innerWidth < 768 ? '0' : '2rem',
-              width: window.innerWidth < 768 ? '100%' : (isExpanded ? '800px' : '350px'),
-              height: window.innerWidth < 768 ? '100%' : (isExpanded ? '600px' : '500px'),
+              bottom: window.innerWidth < 768 ? '0' : (isExpanded ? '0' : '2rem'),
+              right: window.innerWidth < 768 ? '0' : (isExpanded ? '0' : '2rem'),
+              width: window.innerWidth < 768 ? '100%' : (isExpanded ? '100vw' : '350px'),
+              height: window.innerWidth < 768 ? '100%' : (isExpanded ? '100vh' : '500px'),
               maxWidth: '100vw',
               maxHeight: '100vh',
               background: 'rgba(5, 5, 8, 0.95)',
               backdropFilter: 'blur(30px)',
-              border: window.innerWidth < 768 ? 'none' : '1px solid var(--glass-border)',
-              borderRadius: window.innerWidth < 768 ? '0' : '24px',
+              border: (window.innerWidth < 768 || isExpanded) ? 'none' : '1px solid var(--glass-border)',
+              borderRadius: (window.innerWidth < 768 || isExpanded) ? '0' : '24px',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
+              zIndex: 9999,
               zIndex: 1000
             }}
           >

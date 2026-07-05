@@ -30,6 +30,8 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/friends', require('./routes/friends'));
 app.use('/api/analyze-speech', require('./routes/analyze'));
+app.use('/api/tts', require('./routes/tts'));
+app.use('/api/ai', require('./routes/ai'));
 
 
 // Connect to MongoDB
