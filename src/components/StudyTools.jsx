@@ -2,6 +2,10 @@ import { Calculator, ArrowRightLeft, Clock, Book, Loader2, Sparkles, ClipboardLi
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { speak, stopSpeaking, GEMINI_VOICES } from '../utils/speech';
 
 const API_ROOT = import.meta.env.VITE_API_URL || '';
@@ -1029,11 +1033,23 @@ const StudyTools = ({ userClass, initialTab = 'speaking', isFullscreen = false }
                   <div style={{ color: '#8b5cf6', fontWeight: 'bold', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Sparkles size={18} /> Step-by-Step Solution
                   </div>
-                  <div style={{ color: 'white', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontSize: '1.05rem' }}>
-                    {aiMathSolution}
+                  <div style={{ color: 'white', lineHeight: '1.6', fontSize: '1.05rem' }}>
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkMath]} 
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        p: ({node, ...props}) => <p style={{ marginBottom: '1rem' }} {...props} />,
+                        ul: ({node, ...props}) => <ul style={{ marginLeft: '1.5rem', marginBottom: '1rem' }} {...props} />,
+                        ol: ({node, ...props}) => <ol style={{ marginLeft: '1.5rem', marginBottom: '1rem' }} {...props} />,
+                        li: ({node, ...props}) => <li style={{ marginBottom: '0.5rem' }} {...props} />
+                      }}
+                    >
+                      {aiMathSolution}
+                    </ReactMarkdown>
                   </div>
                 </div>
               )}
+
             </div>
           )}
 
