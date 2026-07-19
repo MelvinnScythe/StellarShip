@@ -1,4 +1,6 @@
 import generatedReadingMaterial from './generated_reading_material.json';
+import generatedQuestionBanks from './generated_question_banks.json';
+
 
 const completedClass7ReadingTitles = new Set([
   "Integers",
@@ -7820,10 +7822,47 @@ Reproduction is a biological process by which an organism reproduces an offsprin
 };
 
 
-export const getLessonContent = (title, subject, lessonNum = 1, isSundayTest = false, classNum) => {
-  const result = getLessonContentOriginal(title, subject, lessonNum, classNum);
+const cleanForMatch = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const findMatch = (dataObj, classNum, subject, title) => {
+  if (!dataObj) return null;
+  const cClass = cleanForMatch(`Class ${classNum}`);
+  const cSubj = cleanForMatch(subject);
+  const cTitle = cleanForMatch(String(title).replace(/^\d+\.\s*/, '')); // remove leading numbers
+
+  for (let key of Object.keys(dataObj)) {
+    const cKey = cleanForMatch(key);
+    if (cKey.includes(cClass) && cKey.includes(cSubj) && (cKey.includes(cTitle) || cTitle.includes(cKey))) {
+      return dataObj[key];
+    }
+  }
+  return null;
+};
+
+export const getLessonContent = (title, subject, lessonNum = 1, isSkillTest = false, classNum) => {
+  // Try to find exact matches from generated data
+  const genReading = findMatch(generatedReadingMaterial, classNum, subject, title);
+  const genQuizRaw = findMatch(generatedQuestionBanks, classNum, subject, title);
   
-  if (isSundayTest) {
+  // Format generated quiz to match expected structure
+  let genQuiz = null;
+  if (genQuizRaw && Array.isArray(genQuizRaw.questions)) {
+    genQuiz = genQuizRaw.questions.map(q => ({
+      question: q.question,
+      options: q.options,
+      answer: q.correctAnswer
+    }));
+  }
+
+  const fallbackResult = getLessonContentOriginal(title, subject, lessonNum, classNum);
+  
+  const result = {
+    content: genReading?.explanation || fallbackResult.content,
+    quiz: genQuiz || fallbackResult.quiz || [],
+    topics: fallbackResult.topics || []
+  };
+  
+  if (isSkillTest) {
     let megaQuiz = [];
     let baseQuiz = result.quiz && result.quiz.length > 0 ? result.quiz : [
       { question: `What is a key concept in ${title}?`, options: ["Option A", "Option B", "Option C", "Option D"], answer: "Option A" }
@@ -7840,9 +7879,9 @@ export const getLessonContent = (title, subject, lessonNum = 1, isSundayTest = f
     }
     
     result.quiz = megaQuiz;
-    result.content = `<div style="padding: 1rem; background: rgba(255, 51, 68, 0.1); border-radius: 16px; margin-bottom: 2rem; text-align: center;">
-      <h2 style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent-red);">🏆 Weekly Mega Assessment</h2>
-      <p>This is your Sunday test for ${subject}. Answer all 25 questions correctly to pass!</p>
+    result.content = `<div style="padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 16px; margin-bottom: 2rem; text-align: center;">
+      <h2 style="font-size: 2rem; margin-bottom: 0.5rem; color: #8b5cf6;">🏆 Skill Test</h2>
+      <p>This is your Skill Test for ${subject}. Answer all questions correctly to pass and earn massive XP!</p>
     </div>` + result.content;
   }
   

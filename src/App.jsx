@@ -3616,13 +3616,38 @@ function App() {
     setTasks(prev => prev.map(task => {
       if (task.id === taskId) {
         const newStatus = !task.completed;
+        
+        let earnedXp = (selectedClass * 2) + 10;
+        const isSunday = new Date().getDay() === 0;
+        if (isSunday) {
+          earnedXp = Math.round(earnedXp * 2.5);
+        } else {
+          try {
+            const lessonInfo = getLessonContent(task.title, task.subject, 1, false, selectedClass);
+            if (lessonInfo && lessonInfo.content && lessonInfo.content.length > 1500) {
+              earnedXp += 5; // Long reading bonus
+            }
+          } catch(e) {}
+        }
+        
+        if (newStatus) {
+          const todayStr = new Date().toISOString().split('T')[0];
+          const completedTodayKey = `antigravity_completed_today_${todayStr}`;
+          let completedToday = [];
+          try { completedToday = JSON.parse(localStorage.getItem(completedTodayKey)) || []; } catch(e){}
+          if (!completedToday.includes(task.subject)) {
+            completedToday.push(task.subject);
+            localStorage.setItem(completedTodayKey, JSON.stringify(completedToday));
+          }
+        }
+
         setUserStats(s => ({
           ...s,
           lessonsCompleted: s.lessonsCompleted + (newStatus ? 1 : -1),
-          xpEarned: s.xpEarned + (newStatus ? task.xp : -task.xp),
-          dailyXP: s.dailyXP + (newStatus ? task.xp : -task.xp),
-          sessionXP: s.sessionXP + (newStatus ? task.xp : -task.xp),
-          level: Math.floor((s.xpEarned + (newStatus ? task.xp : -task.xp)) / 500) + 1
+          xpEarned: s.xpEarned + (newStatus ? earnedXp : -earnedXp),
+          dailyXP: s.dailyXP + (newStatus ? earnedXp : -earnedXp),
+          sessionXP: s.sessionXP + (newStatus ? earnedXp : -earnedXp),
+          level: Math.floor((s.xpEarned + (newStatus ? earnedXp : -earnedXp)) / 500) + 1
         }));
         setSubjects(subs => subs.map(sub => {
           if (sub.name === task.subject) {
@@ -3631,7 +3656,7 @@ function App() {
           }
           return sub;
         }));
-        return { ...task, completed: newStatus };
+        return { ...task, completed: newStatus, xp: earnedXp };
       }
       return task;
     }));
@@ -3653,16 +3678,24 @@ function App() {
     setUserStats(prev => ({ ...prev, lessonsCompleted: 0 }));
   }
 
-    const isSunday = new Date().getDay() === 0;
+  const isSunday = new Date().getDay() === 0;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const completedTodayKey = `antigravity_completed_today_${todayStr}`;
+  const getCompletedToday = () => {
+    try { return JSON.parse(localStorage.getItem(completedTodayKey)) || []; }
+    catch { return []; }
+  };
+  
   const uncompletedTasks = tasks.filter(t => !t.completed);
   let dailyMissions = [];
+  const completedToday = getCompletedToday();
   
   if (isSunday) {
-    // Group 1 task per subject but make it a 25-question test
+    // Group 1 task per subject but make it a Skill Test
     const subjectsAdded = new Set();
     for (const t of uncompletedTasks) {
-      if (!subjectsAdded.has(t.subject)) {
-        dailyMissions.push({ ...t, title: `Weekly Mega Assessment: ${t.subject}`, subtopic: "25 Questions", isSundayTest: true });
+      if (!subjectsAdded.has(t.subject) && !completedToday.includes(t.subject)) {
+        dailyMissions.push({ ...t, title: `Skill Test: ${t.subject}`, subtopic: "Skill Test", isSkillTest: true });
         subjectsAdded.add(t.subject);
       }
     }
@@ -3670,7 +3703,7 @@ function App() {
     // 1 sub lesson per subject
     const subjectsAdded = new Set();
     for (const t of uncompletedTasks) {
-      if (!subjectsAdded.has(t.subject)) {
+      if (!subjectsAdded.has(t.subject) && !completedToday.includes(t.subject)) {
         dailyMissions.push(t);
         subjectsAdded.add(t.subject);
       }

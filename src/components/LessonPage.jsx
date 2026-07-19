@@ -6,7 +6,7 @@ import { getLessonContent } from '../curriculumData';
 import TTSButton from './TTSButton';
 
 const LessonPage = ({ lesson, onBack, onComplete, currentUser }) => {
-  const { content, quiz, topics } = useMemo(() => getLessonContent(lesson.chapterTitle || lesson.title, lesson.subject, lesson.lessonNum, lesson.isSundayTest, lesson.classNum), [lesson.chapterTitle, lesson.title, lesson.subject, lesson.lessonNum, lesson.isSundayTest, lesson.classNum]);
+  const { content, quiz, topics } = useMemo(() => getLessonContent(lesson.chapterTitle || lesson.title, lesson.subject, lesson.lessonNum, lesson.isSkillTest, lesson.classNum), [lesson.chapterTitle, lesson.title, lesson.subject, lesson.lessonNum, lesson.isSkillTest, lesson.classNum]);
   
   const [answers, setAnswers] = useState({});
   const [errorMsg, setErrorMsg] = useState("");
