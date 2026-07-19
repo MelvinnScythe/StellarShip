@@ -7846,11 +7846,11 @@ export const getLessonContent = (title, subject, lessonNum = 1, isSkillTest = fa
   
   // Format generated quiz to match expected structure
   let genQuiz = null;
-  if (genQuizRaw && Array.isArray(genQuizRaw.questions)) {
-    genQuiz = genQuizRaw.questions.map(q => ({
+  if (genQuizRaw && Array.isArray(genQuizRaw)) {
+    genQuiz = genQuizRaw.map(q => ({
       question: q.question,
       options: q.options,
-      answer: q.correctAnswer
+      answer: q.answer || q.correctAnswer
     }));
   }
 
