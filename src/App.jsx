@@ -3731,6 +3731,7 @@ function App() {
               lesson={dailyMissions.find(t => t.id === location.pathname.split('/').pop()) || tasks.find(t => t.id === location.pathname.split('/').pop()) || tasks[0]} 
               onBack={() => navigate('/home')} 
               onComplete={() => { toggleTask(location.pathname.split('/').pop()); navigate('/home'); }} 
+              currentUser={currentUser}
             />
           ) : <Navigate to="/" />
         } />
