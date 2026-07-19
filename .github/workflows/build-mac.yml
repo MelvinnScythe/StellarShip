@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Root Dependencies
         run: npm install
@@ -24,12 +24,66 @@ jobs:
       - name: Build Web App (Vite)
         run: npm run build
 
+      - name: Create MacOS App folder
+        run: mkdir -p "Desktop App/MacOS"
+
+      - name: Create MacOS package.json
+        run: |
+          cat > "Desktop App/MacOS/package.json" << 'EOF'
+          {
+            "name": "stellarship-desktop",
+            "version": "1.0.0",
+            "description": "StellarShip Study Platform - MacOS Desktop App",
+            "main": "main.js",
+            "scripts": {
+              "start": "electron .",
+              "build": "electron-builder --mac"
+            },
+            "build": {
+              "appId": "com.stellarship.desktop",
+              "productName": "StellarShip",
+              "directories": { "output": "release" },
+              "files": ["main.js", "package.json"],
+              "extraResources": [{ "from": "../../dist", "to": "dist", "filter": ["**/*"] }],
+              "mac": { "target": ["dmg"] }
+            },
+            "license": "ISC",
+            "type": "commonjs",
+            "devDependencies": {
+              "electron": "^33.0.0",
+              "electron-builder": "^25.0.0"
+            }
+          }
+          EOF
+
+      - name: Create MacOS main.js
+        run: |
+          cat > "Desktop App/MacOS/main.js" << 'EOF'
+          const { app, BrowserWindow } = require('electron');
+          const path = require('path');
+
+          function createWindow() {
+            const win = new BrowserWindow({
+              width: 1280,
+              height: 800,
+              webPreferences: { nodeIntegration: true, contextIsolation: false },
+              autoHideMenuBar: true
+            });
+            const startUrl = `file://${path.join(__dirname, '../../dist/index.html')}`;
+            win.loadURL(startUrl);
+          }
+
+          app.whenReady().then(createWindow);
+          app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+          app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+          EOF
+
       - name: Install MacOS App Dependencies
-        working-directory: "./Desktop App/MacOS"
+        working-directory: "Desktop App/MacOS"
         run: npm install
 
       - name: Build Electron MacOS App
-        working-directory: "./Desktop App/MacOS"
+        working-directory: "Desktop App/MacOS"
         run: npm run build
 
       - name: Upload MacOS Artifacts
