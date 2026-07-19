@@ -1,4 +1,4 @@
-import generatedReadingMaterial from './generated_reading_material.json';
+import generatedReadingMaterial from './generated_reading_material.backup.json';
 import generatedQuestionBanks from './generated_question_banks.json';
 
 
