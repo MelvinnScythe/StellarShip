@@ -3765,6 +3765,7 @@ function App() {
               onBack={() => navigate('/home')} 
               onComplete={() => { toggleTask(location.pathname.split('/').pop()); navigate('/home'); }} 
               currentUser={currentUser}
+              selectedClass={selectedClass}
             />
           ) : <Navigate to="/" />
         } />

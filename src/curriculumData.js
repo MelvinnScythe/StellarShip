@@ -7856,9 +7856,11 @@ export const getLessonContent = (title, subject, lessonNum = 1, isSkillTest = fa
 
   // Construct reading content from the chapter overview and its sub-lessons
   let genContentHtml = null;
+  let genTopics = null;
   if (genReading) {
     genContentHtml = genReading.content || '';
     if (Array.isArray(genReading.lessons)) {
+      genTopics = genReading.lessons.map(l => l.title);
       genContentHtml += '<div style="margin-top: 2rem;">';
       genReading.lessons.forEach((lesson, index) => {
         genContentHtml += `
@@ -7877,7 +7879,7 @@ export const getLessonContent = (title, subject, lessonNum = 1, isSkillTest = fa
   const result = {
     content: genContentHtml || fallbackResult.content,
     quiz: genQuiz || fallbackResult.quiz || [],
-    topics: fallbackResult.topics || []
+    topics: genTopics || fallbackResult.topics || []
   };
   
   if (isSkillTest) {
