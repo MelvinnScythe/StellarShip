@@ -7854,23 +7854,33 @@ export const getLessonContent = (title, subject, lessonNum = 1, isSkillTest = fa
     }));
   }
 
-  // Construct reading content from the chapter overview and its sub-lessons
+  // Construct reading content and topics list dynamically
   let genContentHtml = null;
   let genTopics = null;
   if (genReading) {
-    genContentHtml = genReading.content || '';
     if (Array.isArray(genReading.lessons)) {
-      genTopics = genReading.lessons.map(l => l.title);
-      genContentHtml += '<div style="margin-top: 2rem;">';
-      genReading.lessons.forEach((lesson, index) => {
-        genContentHtml += `
-          <div style="margin-bottom: 1.5rem;">
-            <h3 style="color: var(--text-primary); margin-bottom: 0.5rem; font-size: 1.25rem;">${index + 1}. ${lesson.title}</h3>
-            <p style="color: var(--text-secondary); line-height: 1.6;">${lesson.explanation}</p>
-          </div>
-        `;
-      });
-      genContentHtml += '</div>';
+      genTopics = ["Introduction", ...genReading.lessons.map(l => l.title)];
+      
+      if (lessonNum === 1) {
+        // Show introduction overview
+        genContentHtml = genReading.content || '';
+      } else {
+        // Show specific lesson explanation
+        const lessonIndex = lessonNum - 2;
+        if (genReading.lessons[lessonIndex]) {
+          const lesson = genReading.lessons[lessonIndex];
+          genContentHtml = `
+            <div style="margin-bottom: 1.5rem;">
+              <h3 style="color: var(--text-primary); margin-bottom: 0.5rem; font-size: 1.5rem;">${lesson.title}</h3>
+              <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.15rem;">${lesson.explanation}</p>
+            </div>
+          `;
+        } else {
+          genContentHtml = genReading.content || '';
+        }
+      }
+    } else {
+      genContentHtml = genReading.content || '';
     }
   }
 
