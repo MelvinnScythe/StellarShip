@@ -1,0 +1,101 @@
+name: Build Windows App
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-win:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Root Dependencies
+        run: npm install
+
+      - name: Build Web App (Vite)
+        run: npm run build
+
+      - name: Create Windows App folder
+        run: |
+          mkdir -p "Desktop App/Windows"
+
+      - name: Create Windows package.json
+        shell: bash
+        run: |
+          cat > "Desktop App/Windows/package.json" << 'EOF'
+          {
+            "name": "stellarship-desktop-windows",
+            "version": "1.1.0",
+            "description": "StellarShip Study Platform - Windows Desktop App",
+            "main": "main.js",
+            "scripts": {
+              "start": "electron .",
+              "build": "electron-builder --win"
+            },
+            "build": {
+              "appId": "com.stellarship.desktop.win",
+              "productName": "StellarShip",
+              "directories": { "output": "release" },
+              "files": ["main.js", "package.json"],
+              "extraResources": [{ "from": "../../dist", "to": "dist", "filter": ["**/*"] }],
+              "win": { "target": ["nsis"] },
+              "nsis": {
+                "oneClick": false,
+                "allowToChangeInstallationDirectory": true
+              }
+            },
+            "license": "ISC",
+            "type": "commonjs",
+            "devDependencies": {
+              "electron": "^33.0.0",
+              "electron-builder": "^25.0.0"
+            }
+          }
+          EOF
+
+      - name: Create Windows main.js
+        shell: bash
+        run: |
+          cat > "Desktop App/Windows/main.js" << 'EOF'
+          const { app, BrowserWindow } = require('electron');
+          const path = require('path');
+
+          function createWindow() {
+            const win = new BrowserWindow({
+              width: 1280,
+              height: 800,
+              webPreferences: { nodeIntegration: true, contextIsolation: false },
+              autoHideMenuBar: true
+            });
+            const startUrl = `file://${path.join(__dirname, '../../dist/index.html')}`;
+            win.loadURL(startUrl);
+          }
+
+          app.whenReady().then(createWindow);
+          app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+          app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+          EOF
+
+      - name: Install Windows App Dependencies
+        working-directory: "Desktop App/Windows"
+        run: npm install
+
+      - name: Build Electron Windows App
+        working-directory: "Desktop App/Windows"
+        run: npm run build
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: StellarShip-Windows
+          path: "Desktop App/Windows/release/*.exe"
+          if-no-files-found: error

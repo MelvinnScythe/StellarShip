@@ -6,7 +6,16 @@ import { getLessonContent } from '../curriculumData';
 import TTSButton from './TTSButton';
 
 const LessonPage = ({ lesson, onBack, onComplete, currentUser, selectedClass }) => {
-  const { content, quiz, topics } = useMemo(() => getLessonContent(lesson.chapterTitle || lesson.title, lesson.subject, lesson.lessonNum, lesson.isSkillTest, selectedClass), [lesson.chapterTitle, lesson.title, lesson.subject, lesson.lessonNum, lesson.isSkillTest, selectedClass]);
+  const [activeTab, setActiveTab] = useState(lesson.lessonNum || 1);
+
+  // Sync activeTab when switching lessons externally
+  React.useEffect(() => {
+    setActiveTab(lesson.lessonNum || 1);
+    setAnswers({});
+    setErrorMsg("");
+  }, [lesson.id, lesson.lessonNum]);
+
+  const { content, quiz, topics } = useMemo(() => getLessonContent(lesson.chapterTitle || lesson.title, lesson.subject, activeTab, lesson.isSkillTest, selectedClass), [lesson.chapterTitle, lesson.title, lesson.subject, activeTab, lesson.isSkillTest, selectedClass]);
   
   const [answers, setAnswers] = useState({});
   const [errorMsg, setErrorMsg] = useState("");
@@ -140,15 +149,35 @@ const LessonPage = ({ lesson, onBack, onComplete, currentUser, selectedClass }) 
                 <p style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Topics in this mission:</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {topics.map((t, i) => (
-                    <span key={i} style={{ 
-                      background: (i + 1 === lesson.lessonNum) ? 'var(--accent-red)' : 'rgba(255, 255, 255, 0.1)', 
-                      color: (i + 1 === lesson.lessonNum) ? 'white' : 'var(--text-secondary)',
-                      padding: '0.25rem 0.75rem', 
-                      borderRadius: '100px',
-                      fontSize: '0.85rem',
-                      fontWeight: (i + 1 === lesson.lessonNum) ? '600' : '400',
-                      border: (i + 1 === lesson.lessonNum) ? 'none' : '1px solid rgba(255,255,255,0.1)'
-                    }}>{t}</span>
+                    <button 
+                      key={i} 
+                      onClick={() => setActiveTab(i + 1)}
+                      style={{ 
+                        background: (i + 1 === activeTab) ? 'var(--accent-red)' : 'rgba(255, 255, 255, 0.1)', 
+                        color: (i + 1 === activeTab) ? 'white' : 'var(--text-secondary)',
+                        padding: '0.35rem 0.85rem', 
+                        borderRadius: '100px',
+                        fontSize: '0.85rem',
+                        fontWeight: (i + 1 === activeTab) ? '600' : '400',
+                        border: (i + 1 === activeTab) ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        if (i + 1 !== activeTab) {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                          e.currentTarget.style.color = 'white';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (i + 1 !== activeTab) {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
+                    >
+                      {t}
+                    </button>
                   ))}
                 </div>
               </div>

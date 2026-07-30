@@ -7854,33 +7854,93 @@ export const getLessonContent = (title, subject, lessonNum = 1, isSkillTest = fa
     }));
   }
 
-  // Construct reading content and topics list dynamically
+  const cleanTitle = String(title || '').replace(/^\d+\.\s*/, '').trim();
+
+  // Construct reading content and topics list dynamically according to 5-part subpage schema
   let genContentHtml = null;
-  let genTopics = null;
+  let genTopics = [
+    "1. Introduction",
+    "2. Concept Deep-Dive",
+    "3. Key Concepts - Part 1",
+    "4. Key Concepts - Part 2",
+    "5. Key Concepts - Part 3 & Activities"
+  ];
+
   if (genReading) {
-    if (Array.isArray(genReading.lessons)) {
-      genTopics = ["Introduction", ...genReading.lessons.map(l => l.title)];
-      
-      if (lessonNum === 1) {
-        // Show introduction overview
-        genContentHtml = genReading.content || '';
-      } else {
-        // Show specific lesson explanation
-        const lessonIndex = lessonNum - 2;
-        if (genReading.lessons[lessonIndex]) {
-          const lesson = genReading.lessons[lessonIndex];
-          genContentHtml = `
-            <div style="margin-bottom: 1.5rem;">
-              <h3 style="color: var(--text-primary); margin-bottom: 0.5rem; font-size: 1.5rem;">${lesson.title}</h3>
-              <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.15rem;">${lesson.explanation}</p>
-            </div>
-          `;
-        } else {
-          genContentHtml = genReading.content || '';
-        }
-      }
-    } else {
-      genContentHtml = genReading.content || '';
+    const lessonsList = Array.isArray(genReading.lessons) ? genReading.lessons : [];
+    
+    // Custom subpage titles if lessons present
+    genTopics = [
+      "1. Introduction",
+      lessonsList[0] ? `2. Concept Deep-Dive: ${lessonsList[0].title}` : "2. Concept Deep-Dive",
+      lessonsList[1] ? `3. Key Concepts - Part 1: ${lessonsList[1].title}` : "3. Key Concepts - Part 1",
+      lessonsList[2] ? `4. Key Concepts - Part 2: ${lessonsList[2].title}` : "4. Key Concepts - Part 2",
+      lessonsList[3] ? `5. Key Concepts - Part 3 & Activities: ${lessonsList[3].title}` : "5. Key Concepts - Part 3 & Activities"
+    ];
+
+    if (lessonNum === 1) {
+      genContentHtml = `
+        <div style="margin-bottom: 2rem;">
+          <h3 style="color: var(--text-primary); font-size: 1.6rem; margin-bottom: 1rem; border-bottom: 2px solid var(--accent-red); padding-bottom: 0.5rem; display: inline-block;">1. Introduction</h3>
+          ${genReading.content || `<p>Have you ever wondered how we can understand and master <strong>${cleanTitle}</strong> in ${subject}? This chapter introduces us to essential principles and real-world connections, helping us build a strong foundation step by step.</p>`}
+        </div>
+      `;
+    } else if (lessonNum === 2) {
+      const l = lessonsList[0] || lessonsList[1];
+      genContentHtml = `
+        <div style="margin-bottom: 2rem;">
+          <h3 style="color: var(--text-primary); font-size: 1.6rem; margin-bottom: 1rem; border-bottom: 2px solid var(--accent-red); padding-bottom: 0.5rem; display: inline-block;">2. Concept Deep-Dive</h3>
+          ${l ? `<h4 style="color: var(--accent-red); font-size: 1.3rem; margin-top: 1rem; margin-bottom: 0.75rem;">${l.title}</h4>` : ''}
+          <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.15rem;">${l?.explanation || `Numbers and concepts can be represented in various forms and structures. Understanding these core mechanics helps simplify complex calculations and comparisons, making it easier to work with large problems in ${subject}.`}</p>
+          
+          <div style="margin-top: 1.5rem; padding: 1.25rem; background: rgba(99, 102, 241, 0.08); border-left: 4px solid #6366f1; border-radius: 12px;">
+            <h4 style="margin-bottom: 0.5rem; color: #818cf8; font-weight: 600;">💡 Deep-Dive Insight</h4>
+            <p style="margin: 0; color: var(--text-secondary);">Mastering these core principles allows you to analyze problem statements quickly and break them into manageable logical steps.</p>
+          </div>
+        </div>
+      `;
+    } else if (lessonNum === 3) {
+      const l = lessonsList[1] || lessonsList[0];
+      genContentHtml = `
+        <div style="margin-bottom: 2rem;">
+          <h3 style="color: var(--text-primary); font-size: 1.6rem; margin-bottom: 1rem; border-bottom: 2px solid var(--accent-red); padding-bottom: 0.5rem; display: inline-block;">3. Key Concepts - Part 1</h3>
+          ${l ? `<h4 style="color: var(--accent-red); font-size: 1.3rem; margin-top: 1rem; margin-bottom: 0.75rem;">${l.title}</h4>` : ''}
+          <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.15rem;">${l?.explanation || `Expanded forms and foundational representations show the exact value of each component (e.g. place values in numbers, functional steps in scientific processes). This helps visualize the structure of ${cleanTitle} clearly.`}</p>
+
+          <div style="margin-top: 1.5rem; padding: 1.25rem; background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10b981; border-radius: 12px;">
+            <h4 style="margin-bottom: 0.5rem; color: #34d399; font-weight: 600;">✏️ Core Rule & Solved Example</h4>
+            <p style="margin: 0; color: var(--text-secondary);">Always write out initial values and rules before performing calculations or drawing conclusions.</p>
+          </div>
+        </div>
+      `;
+    } else if (lessonNum === 4) {
+      const l = lessonsList[2] || lessonsList[1];
+      genContentHtml = `
+        <div style="margin-bottom: 2rem;">
+          <h3 style="color: var(--text-primary); font-size: 1.6rem; margin-bottom: 1rem; border-bottom: 2px solid var(--accent-red); padding-bottom: 0.5rem; display: inline-block;">4. Key Concepts - Part 2</h3>
+          ${l ? `<h4 style="color: var(--accent-red); font-size: 1.3rem; margin-top: 1rem; margin-bottom: 0.75rem;">${l.title}</h4>` : ''}
+          <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.15rem;">${l?.explanation || `Comparing elements involves understanding relative values, place positions, or systematic interactions. Each component's position determines its impact, allowing us to perform accurate operations and evaluate outcomes.`}</p>
+
+          <div style="margin-top: 1.5rem; padding: 1.25rem; background: rgba(245, 158, 11, 0.08); border-left: 4px solid #f59e0b; border-radius: 12px;">
+            <h4 style="margin-bottom: 0.5rem; color: #fbbf24; font-weight: 600;">🔍 Practical Comparison</h4>
+            <p style="margin: 0; color: var(--text-secondary);">Practice comparing contrasting scenarios to strengthen your analytical reasoning.</p>
+          </div>
+        </div>
+      `;
+    } else { // lessonNum === 5
+      const l = lessonsList[3] || lessonsList[2] || lessonsList[0];
+      genContentHtml = `
+        <div style="margin-bottom: 2rem;">
+          <h3 style="color: var(--text-primary); font-size: 1.6rem; margin-bottom: 1rem; border-bottom: 2px solid var(--accent-red); padding-bottom: 0.5rem; display: inline-block;">5. Key Concepts - Part 3 & Activities</h3>
+          ${l ? `<h4 style="color: var(--accent-red); font-size: 1.3rem; margin-top: 1rem; margin-bottom: 0.75rem;">${l.title}</h4>` : ''}
+          <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.15rem;">${l?.explanation || `Using estimation, rounding, and hands-on activities, we can approximate values and verify results efficiently in practical situations.`}</p>
+
+          <div style="margin-top: 1.5rem; padding: 1.25rem; background: rgba(236, 72, 153, 0.08); border-left: 4px solid #ec4899; border-radius: 12px;">
+            <h4 style="margin-bottom: 0.5rem; color: #f472b6; font-weight: 600;">🎯 Hands-On Activity</h4>
+            <p style="margin: 0; color: var(--text-secondary);">${l?.activities || `Take 3 real-life examples from your surroundings, apply the principles of ${cleanTitle}, and verify your results!`}</p>
+          </div>
+        </div>
+      `;
     }
   }
 

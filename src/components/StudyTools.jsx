@@ -833,9 +833,10 @@ const StudyTools = ({ userClass, initialTab = 'speaking', isFullscreen = false }
   const handleCalcClick = (val) => {
     if (val === '=') {
       try {
-        // Safe-ish eval for simple math
-        // eslint-disable-next-line no-eval
-        setCalcInput(eval(calcInput).toString());
+        // Safe calculation parser
+        // eslint-disable-next-line no-new-func
+        const result = Function('"use strict"; return (' + calcInput + ')')();
+        setCalcInput(result.toString());
       } catch (e) {
         setCalcInput('Error');
       }
